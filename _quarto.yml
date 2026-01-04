@@ -1,0 +1,6 @@
+project:
+    title: "thesis"
+    type: default
+
+format:
+    revealjs: default

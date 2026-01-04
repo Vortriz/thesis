@@ -1,17 +1,21 @@
 # Nix
 .direnv/
-result*/
+result*
+.pre-commit-config.yaml
 
-# Python-generated files
-**/__pycache__/
-**/*.py[oc]
-**/build/
-**/dist/
-**/wheels/
-**/*.egg-info
+# Python
+.venv
+**/__marimo__/session
+**/__pycache__
+.ruff_cache
 
-# Virtual environments
-**/.venv
+# Julia
+Project.toml
+Manifest.toml
 
-# Marimo
-**/__marimo__
+# Quarto
+.quarto/
+**/*.quarto_ipynb
+_extensions/
+
+resources/
