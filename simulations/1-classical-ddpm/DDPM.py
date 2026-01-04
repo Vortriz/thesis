@@ -7,18 +7,19 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
 @app.cell
 def _():
+    import time
+
+    import deepinv
+    import seaborn as sns
     import torch
     from torchvision import datasets, transforms
-    import deepinv
 
-    import seaborn as sns
-
-    import time
     return datasets, deepinv, sns, time, torch, transforms
 
 
@@ -37,7 +38,7 @@ def _(image_size: int, transforms):
             transforms.Resize(image_size),
             transforms.ToTensor(),
             transforms.Normalize((0.0,), (1.0,)),
-        ]
+        ],
     )
     return (transform,)
 
@@ -120,9 +121,7 @@ def _(
         for epoch in range(epochs):
             model.train()
 
-            i = 0
-            for imgs, _ in train_loader:
-                i += 1
+            for i, (imgs, _) in enumerate(train_loader):
                 noise = torch.randn_like(imgs)
                 t = torch.randint(0, timesteps, (imgs.size(0),))
 
@@ -149,9 +148,7 @@ def _(
 
                 mo.output.clear()
                 mo.output.append(f"Epoch: {epoch + 1}/{epochs}")
-                mo.output.append(
-                    f"Progress: {(i * batch_size / dataset_len) * 100:.2f}%"
-                )
+                mo.output.append(f"Progress: {(i * batch_size / dataset_len) * 100:.2f}%")
                 mo.output.append(f"Loss: {loss.item():.4f}")
 
         torch.save(
@@ -160,14 +157,13 @@ def _(
         )
 
         return model, losses
+
     return (train,)
 
 
 @app.cell
 def _(epochs: int, model, mse, optimizer, timesteps: int, train, train_loader):
-    trained_model, losses = train(
-        model, train_loader, optimizer, mse, epochs, timesteps
-    )
+    train(model, train_loader, optimizer, mse, epochs, timesteps)
     return
 
 
@@ -184,9 +180,7 @@ def _(
 ):
     def sample(model, weights=None):
         if weights is not None:
-            model = deepinv.models.DiffUNet(
-                in_channels=1, out_channels=1, pretrained=weights
-            )
+            model = deepinv.models.DiffUNet(in_channels=1, out_channels=1, pretrained=weights)
 
         model.eval()
 
@@ -204,28 +198,22 @@ def _(
                 alpha_cumprod = alphas_cumprod[t]
                 beta = betas[t]
 
-                if t > 0:
-                    noise = torch.randn_like(x)
-                else:
-                    noise = 0
+                noise = torch.randn_like(x) if t > 0 else 0
 
                 x = (1 / torch.sqrt(alpha)) * (
                     x - (beta / torch.sqrt(1 - alpha_cumprod)) * predicted_noise
                 ) + torch.sqrt(beta) * noise
 
-                mo.output.replace(
-                    f"Sampling: {(timesteps - (t + 1)) * 100 / timesteps}%"
-                )
+                mo.output.replace(f"Sampling: {(timesteps - (t + 1)) * 100 / timesteps}%")
 
         return x
+
     return (sample,)
 
 
 @app.cell
 def _(model, sample):
-    s = sample(
-        model, weights="./simulations/1/trained_diffusion_model_1750610944.pth"
-    )
+    s = sample(model, weights="./simulations/1/trained_diffusion_model_1750610944.pth")
     return (s,)
 
 
@@ -236,24 +224,18 @@ def _(s, torch):
 
 
 @app.cell
-def _(sns, x):
-    import matplotlib.pyplot as plt
-
-
+def _(plt, sns, x):
     def plot_images_seaborn_grid(x, rows=8, cols=4):
         x = x.squeeze(1)  # (32, 32, 32)
-        fig, axes = plt.subplots(rows, cols, figsize=(cols * 2, rows * 2))
+        _, axes = plt.subplots(rows, cols, figsize=(cols * 2, rows * 2))
         for idx, img in enumerate(x):
             r = idx // cols
             c = idx % cols
             ax = axes[r, c]
-            sns.heatmap(
-                img.cpu().numpy(), cmap="gray", cbar=False, ax=ax, square=True
-            )
+            sns.heatmap(img.cpu().numpy(), cmap="gray", cbar=False, ax=ax, square=True)
             ax.axis("off")
         plt.tight_layout()
         plt.show()
-
 
     plot_images_seaborn_grid(x, rows=8, cols=4)
     return
