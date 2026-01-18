@@ -2,11 +2,11 @@
     perSystem = {
         treefmt = {
             programs = {
-                ruff-format = {
+                ruff-format.enable = true;
+                ruff-check = {
                     enable = true;
-                    lineLength = 100;
+                    extendSelect = [ "I" ];
                 };
-                ruff-check.enable = true;
             };
 
             settings.formatter = {

@@ -3,18 +3,25 @@ name = "thesis"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "cirq>=1.6.1",
     "deepinv>=0.3.0",
     "marimo>=0.14.0",
+    "matplotlib>=3.10.8",
+    "numpy==2.3.0",
+    "pot[backend-torch]>=0.9.6.post1",
+    "pylatexenc>=2.10",
+    "qiskit>=2.3.0",
+    "qutip>=5.2.2",
+    "scipy>=1.16.3",
     "seaborn>=0.13.2",
+    "tensorcircuit-ng>=1.4.0",
+    "tensorflow>=2.20.0",
     "torch>=2.7.1",
-    "torchvision>=0.22.1",
+    "torchvision>=0.24.1",
 ]
 
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cpu" },
-]
-torchvision = [
   { index = "pytorch-cpu" },
 ]
 

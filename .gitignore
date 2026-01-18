@@ -6,6 +6,7 @@ result*
 # Python
 .venv
 **/__marimo__/session
+**/__marimo__/cache
 **/__pycache__
 .ruff_cache
 
@@ -17,5 +18,3 @@ Manifest.toml
 .quarto/
 **/*.quarto_ipynb
 _extensions/
-
-resources/
