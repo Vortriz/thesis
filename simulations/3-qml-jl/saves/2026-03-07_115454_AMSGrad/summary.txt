@@ -1,0 +1,11 @@
+--- Run Result ---
+Final Loss: 0.066315
+
+--- Hyperparameters ---
+Optimizer: Optimisers.AMSGrad(eta=0.07, beta=(0.9, 0.999), epsilon=1.0e-8)
+n_qubits:  6
+n_layers:  20
+n_ancilla: 3
+T:         4
+Schedule:  [400, 400, 400, 400]
+Target:    Original

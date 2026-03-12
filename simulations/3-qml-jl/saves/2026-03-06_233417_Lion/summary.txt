@@ -1,0 +1,11 @@
+--- Run Result ---
+Final Loss: 0.325849
+
+--- Hyperparameters ---
+Optimizer: Optimisers.Lion(eta=0.002, beta=(0.9, 0.999))
+n_qubits:  4
+n_layers:  12
+n_ancilla: 1
+T:         4
+Schedule:  [1200, 1500, 1500, 1200]
+Target:    Original
