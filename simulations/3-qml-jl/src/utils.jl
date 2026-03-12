@@ -42,16 +42,17 @@ function intrange(start::Int64, stop::Int64; length::Int64)
     return range(start, stop; length=length) .|> x -> round(Int64, x)
 end
 
-get_optimizer_name(opt) = opt |> Symbol |> String |> x -> split(x, "(") |> first |> x -> replace(x, "Optimisers." => "")
+get_optimizer_name(strategy::TrainingStrategy) = hasproperty(strategy, :optimizer) ? string(nameof(typeof(strategy.optimizer))) : string(nameof(typeof(strategy)))
 
 function record_run(model, strategy, training_plot, target)
     # 1. Create a unique folder inside simulations/3-qddpm-jl/saves/
     timestamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS")
-    save_dir = joinpath("saves", "$(timestamp)_$(get_optimizer_name(strategy.optimizer))")
+    opt_name = get_optimizer_name(strategy)
+    save_dir = joinpath("saves", "$(timestamp)_$(opt_name)")
     mkpath(save_dir)
 
     # 2. Calculate the approximate final loss (avg of last 50 iterations of final step)
-    final_loss = mean(strategy.loss_history[1][end-50:end])
+    final_loss = mean(strategy.loss_history[1][max(1, end-50):end])
 
     # 3. Save Hyperparameters and Final Loss to a summary file
     open(joinpath(save_dir, "summary.txt"), "w") do f
@@ -59,7 +60,12 @@ function record_run(model, strategy, training_plot, target)
         println(f, "Final Loss: ", round(final_loss, digits=6))
 
         println(f, "\n--- Hyperparameters ---")
-        println(f, "Optimizer: ", strategy.optimizer)
+        if hasproperty(strategy, :optimizer)
+            println(f, "Optimizer: ", strategy.optimizer)
+        end
+        if hasproperty(strategy, :hyper_params)
+            println(f, "HyperParams: ", strategy.hyper_params)
+        end
         println(f, "n_qubits:  ", model.n_qubits)
         println(f, "n_layers:  ", model.n_layers)
         println(f, "n_ancilla: ", model.n_ancilla)
