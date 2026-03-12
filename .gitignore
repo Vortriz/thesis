@@ -10,10 +10,6 @@ result*
 **/__pycache__
 .ruff_cache
 
-# Julia
-Project.toml
-Manifest.toml
-
 # Quarto
 .quarto/
 **/*.quarto_ipynb
