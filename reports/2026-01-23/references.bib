@@ -1,0 +1,97 @@
+@ARTICLE{Zhang2024-wm,
+  title     = "Generative quantum machine learning via denoising diffusion
+               probabilistic models",
+  author    = "Zhang, Bingzhi and Xu, Peng and Chen, Xiaohui and Zhuang, Quntao",
+  abstract  = "Deep generative models are key-enabling technology to computer
+               vision, text generation, and large language models. Denoising
+               diffusion probabilistic models (DDPMs) have recently gained much
+               attention due to their ability to generate diverse and
+               high-quality samples in many computer vision tasks, as well as
+               to incorporate flexible model architectures and a relatively
+               simple training scheme. Quantum generative models, empowered by
+               entanglement and superposition, have brought new insight to
+               learning classical and quantum data. Inspired by the classical
+               counterpart, we propose the quantum denoising diffusion
+               probabilistic model (QuDDPM) to enable efficiently trainable
+               generative learning of quantum data. QuDDPM adopts sufficient
+               layers of circuits to guarantee expressivity, while it
+               introduces multiple intermediate training tasks as interpolation
+               between the target distribution and noise to avoid barren
+               plateau and guarantee efficient training. We provide bounds on
+               the learning error and demonstrate QuDDPM's capability in
+               learning correlated quantum noise model, quantum many-body
+               phases, and topological structure of quantum data. The results
+               provide a paradigm for versatile and efficient quantum
+               generative learning.",
+  journal   = "Phys. Rev. Lett.",
+  publisher = "American Physical Society (APS)",
+  volume    =  132,
+  number    =  10,
+  pages     = "100602",
+  month     =  mar,
+  year      =  2024,
+  copyright = "https://link.aps.org/licenses/aps-default-license",
+  language  = "en"
+}
+
+@ARTICLE{Song2023-jb,
+  title        = "Consistency Models",
+  author       = "Song, Yang and Dhariwal, Prafulla and Chen, Mark and
+                  Sutskever, Ilya",
+  abstract     = "Diffusion models have significantly advanced the fields of
+                  image, audio, and video generation, but they depend on an
+                  iterative sampling process that causes slow generation. To
+                  overcome this limitation, we propose consistency models, a
+                  new family of models that generate high quality samples by
+                  directly mapping noise to data. They support fast one-step
+                  generation by design, while still allowing multistep sampling
+                  to trade compute for sample quality. They also support
+                  zero-shot data editing, such as image inpainting,
+                  colorization, and super-resolution, without requiring
+                  explicit training on these tasks. Consistency models can be
+                  trained either by distilling pre-trained diffusion models, or
+                  as standalone generative models altogether. Through extensive
+                  experiments, we demonstrate that they outperform existing
+                  distillation techniques for diffusion models in one- and
+                  few-step sampling, achieving the new state-of-the-art FID of
+                  3.55 on CIFAR-10 and 6.20 on ImageNet 64x64 for one-step
+                  generation. When trained in isolation, consistency models
+                  become a new family of generative models that can outperform
+                  existing one-step, non-adversarial generative models on
+                  standard benchmarks such as CIFAR-10, ImageNet 64x64 and LSUN
+                  256x256.",
+  year         =  2023,
+  primaryClass = "cs.LG",
+  eprint       = "2303.01469"
+}
+
+@ARTICLE{Xie2018-pc,
+  title        = "A Fast Proximal Point Method for Computing Exact Wasserstein
+                  Distance",
+  author       = "Xie, Yujia and Wang, Xiangfeng and Wang, Ruijia and Zha,
+                  Hongyuan",
+  abstract     = "Wasserstein distance plays increasingly important roles in
+                  machine learning, stochastic programming and image
+                  processing. Major efforts have been under way to address its
+                  high computational complexity, some leading to approximate or
+                  regularized variations such as Sinkhorn distance. However, as
+                  we will demonstrate, regularized variations with large
+                  regularization parameter will degradate the performance in
+                  several important machine learning applications, and small
+                  regularization parameter will fail due to numerical stability
+                  issues with existing algorithms. We address this challenge by
+                  developing an Inexact Proximal point method for exact Optimal
+                  Transport problem (IPOT) with the proximal operator
+                  approximately evaluated at each iteration using projections
+                  to the probability simplex. The algorithm (a) converges to
+                  exact Wasserstein distance with theoretical guarantee and
+                  robust regularization parameter selection, (b) alleviates
+                  numerical stability issue, (c) has similar computational
+                  complexity to Sinkhorn, and (d) avoids the shrinking problem
+                  when apply to generative models. Furthermore, a new algorithm
+                  is proposed based on IPOT to obtain sharper Wasserstein
+                  barycenter.",
+  year         =  2018,
+  primaryClass = "stat.ML",
+  eprint       = "1802.04307"
+}
