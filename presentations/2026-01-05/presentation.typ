@@ -151,7 +151,7 @@ The aim is to train a series of Parametrized Quantum Circuits (PQC) to reverse t
 Our loss function is defined as:
 
 $
-    cal(D)_"MMD" (cal(E)_1, cal(E)_2) = dash(F) (cal(E)_1, cal(E)_1) +  dash(F) (cal(E)_2, cal(E)_2) - 2 dash(F) (cal(E)_1, cal(E)_2)
+    cal(D)_"MMD" (cal(E)_1, cal(E)_2) = dash(F) (cal(E)_1, cal(E)_1) + dash(F) (cal(E)_2, cal(E)_2) - 2 dash(F) (cal(E)_1, cal(E)_2)
 $
 
 For practical purposes, we use our finite samples $cal(S)_1$ and $cal(S)_2$ to compute MMD.
@@ -176,7 +176,12 @@ We train each PQC over many epochs. In each epoch, we sample a small batch from 
     )
     let U(t, x) = mqgate([PQC \ $ tilde(U)_i^((#t)) $], n: 2, x: x)
 
-    let mz = box(align(center)[$M_Z$], width: 2.5em, stroke: 0.5pt + black, inset: 0.5em)
+    let mz = box(
+        align(center)[$M_Z$],
+        width: 2.5em,
+        stroke: 0.5pt + black,
+        inset: 0.5em,
+    )
 
     grid(
         columns: 6,
@@ -186,10 +191,11 @@ We train each PQC over many epochs. In each epoch, we sample a small batch from 
             lstick($ket(tilde(psi)_i^((0)))$),
             lstick(mz, y: 1, x: 0),
             ..tq.build(
-                tq.mqgate(0, n:2, [PQC \ $ tilde(U)_i^((0)) $]),
+                tq.mqgate(0, n: 2, [PQC \ $ tilde(U)_i^((0)) $]),
             ),
             s([1], 2),
-            [\ ], setwire(4, wire-distance: 1.3pt),
+            [\ ],
+            setwire(4, wire-distance: 1.3pt),
             rstick($ket(0)^(times.o n_a)$, x: 2, y: 1),
             scale: 130%,
         ),
@@ -198,16 +204,17 @@ We train each PQC over many epochs. In each epoch, we sample a small batch from 
             setwire(4, wire-distance: 1.3pt),
             slice(
                 label: [$ket(psi_i^((t)))$ #v(7pt)],
-                stroke: (paint: gray, dash: "dashed",),
+                stroke: (paint: gray, dash: "dashed"),
                 n: 1,
                 x: 1,
             ),
             lstick(mz, y: 1, x: 0),
             ..tq.build(
-                tq.mqgate(0, n:2, [PQC \ $ tilde(U)_i^((t+1)) $]),
+                tq.mqgate(0, n: 2, [PQC \ $ tilde(U)_i^((t+1)) $]),
             ),
             s([t+1], 2),
-            [\ ], setwire(4, wire-distance: 1.3pt),
+            [\ ],
+            setwire(4, wire-distance: 1.3pt),
             rstick($ket(0)^(times.o n_a)$, x: 2, y: 1),
             scale: 130%,
         ),
@@ -216,21 +223,21 @@ We train each PQC over many epochs. In each epoch, we sample a small batch from 
             setwire(4, wire-distance: 1.3pt),
             slice(
                 label: [$ket(psi_i^((T-1)))$ #v(7pt)],
-                stroke: (paint: gray, dash: "dashed",),
+                stroke: (paint: gray, dash: "dashed"),
                 n: 1,
                 x: 1,
             ),
             lstick(mz, y: 1, x: 0),
             ..tq.build(
-                tq.mqgate(0, n:2, [PQC \ $ tilde(U)_i^((T)) $]),
+                tq.mqgate(0, n: 2, [PQC \ $ tilde(U)_i^((T)) $]),
             ),
             rstick($ket(tilde(psi)_i^((T)))$, x: 2, y: 0),
-            [\ ], setwire(4, wire-distance: 1.3pt),
+            [\ ],
+            setwire(4, wire-distance: 1.3pt),
             rstick($ket(0)^(times.o n_a)$, x: 2, y: 1),
             scale: 130%,
         ),
     )
-
 }
 
 where each PQC is like:
@@ -240,31 +247,36 @@ where each PQC is like:
     set align(center)
 
     let nq = 3
-    let mz = box(align(center)[$M_Z$], width: 2.5em, stroke: 0.5pt + black, inset: 0.5em)
+    let mz = box(
+        align(center)[$M_Z$],
+        width: 2.5em,
+        stroke: 0.5pt + black,
+        inset: 0.5em,
+    )
 
     quantum-circuit(
         slice(
             label: [$ket(psi_i^((t)))$ #v(7pt)],
-            stroke: (paint: gray, dash: "dashed",),
+            stroke: (paint: gray, dash: "dashed"),
             n: 4,
             x: 1,
         ),
         slice(
             label: [$ket(psi_i^((t+1)))$ #v(7pt)],
-            stroke: (paint: gray, dash: "dashed",),
+            stroke: (paint: gray, dash: "dashed"),
             n: 4,
             x: 7,
         ),
         ..range(4, 6).map(i => lstick(mz, y: i, x: 0)),
         ..range(6).map(i => gate($R_Y$, y: i, x: 4)),
         ..range(6).map(i => gate($R_X$, y: i, x: 5)),
-        mqgate($Z$, y:0, x:3, target: 1),
-        mqgate($Z$, y:1, x:2, target: 1),
-        mqgate($Z$, y:2, x:3, target: 1),
-        mqgate($Z$, y:3, x:2, target: 1),
-        mqgate($Z$, y:4, x:3, target: 1),
+        mqgate($Z$, y: 0, x: 3, target: 1),
+        mqgate($Z$, y: 1, x: 2, target: 1),
+        mqgate($Z$, y: 2, x: 3, target: 1),
+        mqgate($Z$, y: 3, x: 2, target: 1),
+        mqgate($Z$, y: 4, x: 3, target: 1),
         rstick($ket(0)^(times.o n_a)$, n: 2, y: 4, x: 7),
-        gategroup(6, 4, x:2, label: [repeat for L layers], stroke: gray),
+        gategroup(6, 4, x: 2, label: [repeat for L layers], stroke: gray),
         scale: 110%,
     )
 }

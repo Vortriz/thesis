@@ -148,7 +148,9 @@ def _(
 
                 mo.output.clear()
                 mo.output.append(f"Epoch: {epoch + 1}/{epochs}")
-                mo.output.append(f"Progress: {(i * batch_size / dataset_len) * 100:.2f}%")
+                mo.output.append(
+                    f"Progress: {(i * batch_size / dataset_len) * 100:.2f}%",
+                )
                 mo.output.append(f"Loss: {loss.item():.4f}")
 
         torch.save(
@@ -180,7 +182,9 @@ def _(
 ):
     def sample(model, weights=None):
         if weights is not None:
-            model = deepinv.models.DiffUNet(in_channels=1, out_channels=1, pretrained=weights)
+            model = deepinv.models.DiffUNet(
+                in_channels=1, out_channels=1, pretrained=weights,
+            )
 
         model.eval()
 
@@ -204,7 +208,9 @@ def _(
                     x - (beta / torch.sqrt(1 - alpha_cumprod)) * predicted_noise
                 ) + torch.sqrt(beta) * noise
 
-                mo.output.replace(f"Sampling: {(timesteps - (t + 1)) * 100 / timesteps}%")
+                mo.output.replace(
+                    f"Sampling: {(timesteps - (t + 1)) * 100 / timesteps}%",
+                )
 
         return x
 

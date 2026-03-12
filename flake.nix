@@ -65,6 +65,10 @@
                                 enable = true;
                                 indent = 4;
                             };
+                            prettier = {
+                                enable = true;
+                                settings.tabWidth = 4;
+                            };
                         };
 
                         settings = {
@@ -72,6 +76,7 @@
                                 deadnix.priority = 1;
                                 statix.priority = 2;
                                 nixfmt.priority = 3;
+                                prettier.priority = 4;
                             };
                         };
                     };
