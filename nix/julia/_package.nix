@@ -12,6 +12,7 @@ pkgs.julia.withPackages.override
         # Core
         "Yao"
         "YaoPlots"
+        "CairoMakie"
         "WGLMakie"
         "QuantumToolbox"
         "OptimalTransport"

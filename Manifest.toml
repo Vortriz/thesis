@@ -42,6 +42,12 @@ uuid = "32cfe2d9-419e-45f2-8191-2267705d8dbc"
 git-tree-sha1 = "1d8014f0bccddcb3ea0e62a3362413a1ce917727"
 deps = [ "LinearAlgebra", "Luxor", "YaoArrayRegister", "YaoBlocks",]
 
+[[deps.CairoMakie]]
+version = "0.15.8"
+uuid = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+git-tree-sha1 = "5017d6849aff775febd36049f7d926a5fb6677ec"
+deps = [ "CRC32c", "Cairo", "Cairo_jll", "Colors", "FileIO", "FreeType", "GeometryBasics", "LinearAlgebra", "Makie", "PrecompileTools",]
+
 [[deps.WGLMakie]]
 version = "0.13.8"
 uuid = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"

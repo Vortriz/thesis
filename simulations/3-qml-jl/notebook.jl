@@ -13,15 +13,12 @@ begin
     Pkg.instantiate()
 end
 
-# ╔═╡ ad6480ef-f200-49d9-98d7-a4607f85a903
-using PlutoLinks
-
 # ╔═╡ c9dfae33-aef0-42e5-b43c-87d542a1b428
 using Random
 
 # ╔═╡ 9ba0daf4-2b8e-47c8-beb4-796bfa13f4f5
 begin
-	include("src/default.jl")
+	include("src/base.jl")
 	using .QDDPM
 end
 
@@ -51,13 +48,13 @@ using JET, BenchmarkTools
 
 # ╔═╡ 06399d96-599f-40ab-b2f7-f8f6955617ca
 begin
-	const T = 5
+	const T = 2
 	model = Model(
-	    n_qubits = 7,
-	    n_ancilla = 5,
+	    n_qubits = 1,
+	    n_ancilla = 1,
 	    T = T,
 	    forward_ensemble_size = 1000,
-	    n_layers = 22,
+	    n_layers = 2,
 	    backward_ensemble_size = 100,
 	    rng = MersenneTwister(124),
 	)
@@ -76,7 +73,7 @@ begin
 	training_strategy = GradZygote(
 		loss_function = wasserstein_distance,
 		optimizer = Optimisers.AMSGrad(0.03),
-		iter_schedule = [300, 500, 500, 500, 400],
+		iter_schedule = [30, 50, 50, 50, 60],
 		# iter_schedule = vcat(fill(400, 1), fill(600, T-2), fill(600, 1)),
 		# iter_schedule = intrange(1200, 1100; length=T),
 	)
@@ -198,7 +195,6 @@ losses |> std
 
 # ╔═╡ Cell order:
 # ╟─b37d79fa-f9a8-11f0-8be3-37c0117d6175
-# ╠═ad6480ef-f200-49d9-98d7-a4607f85a903
 # ╠═c9dfae33-aef0-42e5-b43c-87d542a1b428
 # ╠═3cc2773d-624a-40a1-8839-8e1efde82147
 # ╠═9ba0daf4-2b8e-47c8-beb4-796bfa13f4f5
