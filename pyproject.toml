@@ -8,16 +8,18 @@ dependencies = [
     "marimo>=0.14.0",
     "matplotlib>=3.10.8",
     "numpy==2.3.0",
+    "pennylane>=0.44.0",
     "pot[backend-torch]>=0.9.6.post1",
     "pylatexenc>=2.10",
+    "python-lsp-server>=1.14.0",
     "qiskit>=2.3.0",
     "qutip>=5.2.2",
     "scipy>=1.16.3",
     "seaborn>=0.13.2",
     "tensorcircuit-ng>=1.4.0",
-    "tensorflow>=2.20.0",
     "torch>=2.7.1",
     "torchvision>=0.24.1",
+    "websockets>=16.0",
 ]
 
 [tool.uv.sources]
