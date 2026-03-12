@@ -56,7 +56,7 @@ We consider the task of the generating new elements from an unknown distribution
 For example, we choose $n$-qubit states clustered around $ket(0)^(times.o n)$
 
 #figure(
-    image("assets/cluster0.png"),
+    image("../../assets/cluster0.png"),
     caption: [$m = 1000$ single qubit states clustered around $ket(0)$],
 )
 
@@ -138,7 +138,7 @@ $
 After $T$ steps, the states $cal(S)_T = { ket(psi_i^((T))) , i = 1, dots, m }$ are approximately Haar random.
 
 #figure(
-    image("assets/fidelity_evolution.png", height: 60%),
+    image("../../assets/fidelity_evolution.png", height: 60%),
     caption: [Gradual decrease in fidelity of single qubit states to $frac(1, 2, style: "skewed")$  over $T = 20$ steps.],
 )
 
