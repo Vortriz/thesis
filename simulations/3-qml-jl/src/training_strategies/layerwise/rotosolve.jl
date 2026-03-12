@@ -1,4 +1,6 @@
-struct Rotosolve <: TrainingStrategy
+export Rotosolve
+
+struct Rotosolve <: StepwiseStrategy
     loss_function::Function
     iter_schedule::Vector{Int}
     loss_history::Vector{Vector{Float64}}
@@ -12,22 +14,6 @@ struct Rotosolve <: TrainingStrategy
         target_buffer = zeros(ComplexF64, (2^model.n_qubits, model.backward_ensemble_size))
         new(loss_function, iter_schedule, loss_history, target_buffer)
     end
-end
-
-function denoise(model::Model, strategy::Rotosolve, input_reg::ConcreteBatchedArrayReg, params::Vector{Float64})
-    # Join input register (from AR loop) with ancillas
-    input_with_ancilla::ConcreteBatchedArrayReg = join(
-        input_reg,
-        zero_state(model.n_ancilla; nbatch = input_reg.nbatch),
-    )
-
-    circuit = dispatch(model.backward_circuit, params)
-    apply!(input_with_ancilla, circuit)
-    # Collapse state via measurement of ancilla
-    measure!(RemoveMeasured(), input_with_ancilla, (model.n_qubits+1):model.n_total)
-
-    # Return state matrix
-    return input_with_ancilla.state
 end
 
 function train_step!(model::Model, strategy::Rotosolve, t::Int, current_reg::ConcreteBatchedArrayReg)

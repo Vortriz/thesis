@@ -1,8 +1,6 @@
-export train!, Rotosolve, SPSA, QNSPSA, GradEnzyme, GradZygote
+export train!
 
-abstract type TrainingStrategy end
-
-function train!(model::Model, strategy::TrainingStrategy)
+function train!(model::Model, strategy::StepwiseStrategy)
     @info "Strategy: $(typeof(strategy)) (Autoregressive)"
 
     # Initialize with Haar random states (at t=T)

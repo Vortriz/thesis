@@ -1,4 +1,6 @@
-struct GradZygote{F, O} <: TrainingStrategy
+export GradZygote
+
+struct GradZygote{F, O} <: StepwiseStrategy
     loss_function::F
     optimizer::O
     iter_schedule::Vector{Int}
@@ -9,34 +11,6 @@ struct GradZygote{F, O} <: TrainingStrategy
         loss_history = [zeros(Float64, n) for n in iter_schedule]
         new{F, O}(loss_function, optimizer, iter_schedule, loss_history)
     end
-end
-
-function denoise(model::Model, strategy::GradZygote, input_reg::ConcreteBatchedArrayReg, params::Vector{Float64})
-    # Join input register with zero-initialized ancillas
-    input_with_ancilla = join(
-        input_reg,
-        zero_state(model.n_ancilla; nbatch = input_reg.nbatch),
-    )
-
-    circuit = dispatch(model.backward_circuit, params)
-    apply!(input_with_ancilla, circuit)
-
-    # Measure and remove ancillas (qubits n_qubits+1 to n_total)
-    measure!(RemoveMeasured(), input_with_ancilla, (model.n_qubits+1):model.n_total)
-    return input_with_ancilla.state
-end
-
-function denoise(model::Model, strategy::GradZygote, input_reg::ConcreteArrayReg, params::Vector{Float64})
-    input_with_ancilla = join(
-        input_reg,
-        zero_state(model.n_ancilla),
-    )
-
-    circuit = dispatch(model.backward_circuit, params)
-    apply!(input_with_ancilla, circuit)
-
-    measure!(RemoveMeasured(), input_with_ancilla, (model.n_qubits+1):model.n_total)
-    return input_with_ancilla.state
 end
 
 function train_step!(model::Model, strategy::GradZygote, t::Int, autoregressive_reg::ConcreteBatchedArrayReg)

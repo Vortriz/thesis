@@ -1,7 +1,7 @@
-export denoise
+export SPSA
 
 # SPSA
-struct SPSA <: TrainingStrategy
+struct SPSA <: StepwiseStrategy
     loss_function::Function
     iter_schedule::Vector{Int}
     hyper_params::NamedTuple
@@ -12,19 +12,6 @@ struct SPSA <: TrainingStrategy
         loss_history = iter_schedule .|> zeros
         new(loss_function, iter_schedule, hyper_params, loss_history)
     end
-end
-
-function denoise(model::Model, strategy::SPSA, input_reg::ConcreteBatchedArrayReg, params::Vector{Float64})
-    # Join input register (from AR loop) with ancillas
-    input_with_ancilla::ConcreteBatchedArrayReg = join(
-        input_reg,
-        zero_state(model.n_ancilla; nbatch = input_reg.nbatch),
-    )
-
-	circuit = dispatch(model.backward_circuit, params)
-	apply!(input_with_ancilla, circuit)
-	measure!(RemoveMeasured(), input_with_ancilla, (model.n_qubits+1):model.n_total)
-    return input_with_ancilla.state
 end
 
 function calc_grad(model, strategy, k, input_reg, target_ensemble, params)
@@ -70,8 +57,6 @@ function train_step!(model::Model, strategy::SPSA, t::Int, current_reg::Concrete
         params .-= temp
 
         # Log loss
-        # Use a new batch of targets for evaluation? Or same?
-        # Typically evaluate on same batch or new batch. Here we resample for robustness.
         indices_test = sample(
             1:model.forward_ensemble_size,
             model.backward_ensemble_size,

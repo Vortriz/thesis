@@ -1,4 +1,4 @@
-export mmd_distance, wasserstein_distance, sinkhorn_distance, wasserstein_distance_zygote, ipot
+export mmd_distance, wasserstein_distance, sinkhorn_distance, ipot
 
 # Maximum Mean Discrepancy (MMD)
 function mmd_distance(
@@ -126,48 +126,4 @@ end
 
 function sinkhorn_distance(ensemble1::Ensemble, ensemble2::Ensemble)::Float64
     return sinkhorn_distance(Matrix(ensemble1), Matrix(ensemble2))
-end
-
-function wasserstein_distance_zygote(
-	ensemble1::Matrix{ComplexF64},
-	ensemble2::Matrix{ComplexF64};
-    beta::Float64 = 0.01,
-    max_iter::Int = 1000,
-    L::Int = 1,
-    return_map::Bool = false,
-)::Union{Float64, Matrix{Float64}}
-    N1 = size(ensemble1, 2)
-	N2 = size(ensemble2, 2)
-	a1 = ones(Float64, (N1)) ./ N1
-	a2 = ones(Float64, (N2)) ./ N2
-	C = 1.0 .- abs2.(ensemble1' * ensemble2)
-
-    P = ones(Float64, N1, N2) ./ (N1 * N2)
-    K = exp.(-(C ./ beta))
-
-    u = ones(Float64, N1)
-    v = ones(Float64, N2)
-
-    for _ in 1:max_iter
-        Q = K .* P
-        for _ in 1:L
-            u = a1 ./ (Q * v)
-            v = a2 ./ (Q' * u)
-        end
-        P = u .* Q .* v'
-    end
-
-    if return_map
-        return P
-    else
-        W = sum(P .* C)
-        return W
-    end
-end
-
-function wasserstein_distance_zygote(
-    ensemble1::Ensemble,
-    ensemble2::Ensemble; kwargs...
-)::Union{Float64, Matrix{Float64}}
-    return wasserstein_distance_zygote(Matrix(ensemble1), Matrix(ensemble2); kwargs...)
 end

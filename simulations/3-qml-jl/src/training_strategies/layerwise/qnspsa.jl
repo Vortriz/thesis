@@ -1,4 +1,6 @@
-struct QNSPSA <: TrainingStrategy
+export QNSPSA
+
+struct QNSPSA <: StepwiseStrategy
     loss_function::Function
     iter_schedule::Vector{Int}
     hyper_params::NamedTuple
@@ -13,22 +15,6 @@ struct QNSPSA <: TrainingStrategy
         loss_history = iter_schedule .|> zeros
         new(loss_function, iter_schedule, hyper_params, loss_history)
     end
-end
-
-function denoise(model::Model, strategy::QNSPSA, input_reg::ConcreteBatchedArrayReg, params::Vector{Float64})
-    # Join input register (from AR loop) with ancillas
-    input_with_ancilla::ConcreteBatchedArrayReg = join(
-        input_reg,
-        zero_state(model.n_ancilla; nbatch = input_reg.nbatch),
-    )
-
-    circuit = dispatch(model.backward_circuit, params)
-    apply!(input_with_ancilla, circuit)
-
-    # Measurement collapse
-    measure!(RemoveMeasured(), input_with_ancilla, (model.n_qubits+1):model.n_total)
-
-    return input_with_ancilla.state
 end
 
 # Helper to get state before measurement for Metric Tensor calculation
@@ -85,21 +71,6 @@ function get_raw_metric_tensor(
     p_p  = params + ϵ * Δ1
     p_mp = params - ϵ * Δ1 + ϵ * Δ2
     p_m  = params - ϵ * Δ1
-
-    # Overlaps w.r.t base params is not needed?
-    # Notebook formula:
-    # overlap(p + e(d1+d2)) - overlap(p + e d1) - overlap(p + e(-d1+d2)) + overlap(p - e d1)
-    # All overlaps are implicitly w.r.t a reference state?
-    # In the notebook: get_overlap_tape(qnode, params1, params2)
-    # It calculates |<psi(p1)|psi(p2)>|^2.
-    # Here the reference point is crucial.
-    # The paper (Gacon et al) formula (8) defines:
-    # g_ij = ...
-    # The approximation uses:
-    # 1/2 (F(th, th+d1+d2) - F(th, th+d1) - F(th, th-d1+d2) + F(th, th-d1)) ?
-    # Let's re-read notebook carefully.
-    # "tapes = [get_overlap_tape(..., params_curr, params_curr + ...), ...]"
-    # So reference is always params_curr!
 
     tasks = Vector()
     for i in 1:4
@@ -175,15 +146,6 @@ function train_step!(model::Model, strategy::QNSPSA, t::Int, current_reg::Concre
         metric_tensor = (M_reg + reg_val * I) / (1 + reg_val)
 
         # 3. Update Parameters
-        # Solve (g + lambda I) d = -lr * grad ?
-        # Or just: p_new = p - lr * inv(g) * grad
-        # Notebook: solve(metric, -lr * grad + metric * params) => new_params
-        # equivalent to: metric * new = -lr * grad + metric * old
-        # metric * (new - old) = -lr * grad
-        # new - old = -lr * inv(metric) * grad
-        # new = old - lr * inv(metric) * grad
-        # Yes.
-
         update_step = metric_tensor \ (strategy.hyper_params.η * grad)
         params_next = params - update_step
 

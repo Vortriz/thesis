@@ -1,4 +1,6 @@
-struct GradEnzyme{F, O} <: TrainingStrategy
+export GradEnzyme
+
+struct GradEnzyme{F, O} <: StepwiseStrategy
     loss_function::F
     optimizer::O
     iter_schedule::Vector{Int}

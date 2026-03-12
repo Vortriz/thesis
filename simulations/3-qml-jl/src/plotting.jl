@@ -48,7 +48,27 @@ function plot_forward_fidelity_decay(model::Model)
     return fig
 end
 
-function plot_training_loss_history(model::Model, strategy)
+function plot_training_loss_history(model::Model, strategy::DirectStrategy)
+    fig = Figure()
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Iterations",
+        ylabel = "Loss",
+        title = "Direct training loss history ($(strategy.loss_function |> nameof))",
+    )
+    ax.yticks = 0:0.2:1
+
+    lines!(
+        ax,
+        1:strategy.iter_schedule[1],
+        strategy.loss_history[1]
+    )
+    ylims!(ax, 0, 1)
+
+    return fig
+end
+
+function plot_training_loss_history(model::Model, strategy::StepwiseStrategy)
     fig = Figure()
     ax = Axis(
         fig[1, 1],
@@ -59,8 +79,12 @@ function plot_training_loss_history(model::Model, strategy)
     )
     ax.yticks = 0:0.2:1
 
-	loss_hist = strategy.loss_history |> reverse
-	x = strategy.iter_schedule |> reverse |> cumsum
+    # Slice to 1:model.T to gracefully handle when the user provides an iter_schedule longer than T
+    actual_loss_history = strategy.loss_history[1:model.T]
+    actual_iter_schedule = strategy.iter_schedule[1:model.T]
+
+	loss_hist = actual_loss_history |> reverse
+	x = actual_iter_schedule |> reverse |> cumsum
 	pushfirst!(x, 0)
 
     for t in 1:model.T
@@ -74,34 +98,6 @@ function plot_training_loss_history(model::Model, strategy)
 
     return fig
 end
-
-# function plot_training_loss_history(model::Model, strategy::SPSA)
-#     fig = Figure()
-#     ax = Axis(
-#         fig[1, 1],
-#         # yscale = log10
-#         xlabel = "Iterations",
-#         ylabel = "Loss",
-#         title = "Backward process loss history ($(strategy.loss_function |> nameof))",
-#     )
-#     ax.yticks = 0:0.2:1
-
-# 	loss_hist = strategy.loss_history |> reverse
-# 	x = fill(strategy.iters, model.T) |> cumsum
-# 	pushfirst!(x, 0)
-
-#     for t in 1:model.T
-# 		lines!(
-# 			ax,
-# 			(x[t]+1):x[t+1],
-# 			loss_hist[t]
-# 		)
-#     end
-#     ylims!(ax, 0, 1)
-
-# 	@show loss_hist[end]
-#     return fig
-# end
 
 function plot_eval_loss_history(
     model::Model,
