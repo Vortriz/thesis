@@ -14,3 +14,7 @@ result*
 .quarto/
 **/*.quarto_ipynb
 _extensions/
+
+# SLURM
+**/job*.err
+**/job*.out
