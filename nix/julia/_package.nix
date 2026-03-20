@@ -2,6 +2,7 @@ pkgs:
 pkgs.julia.withPackages.override
     {
         augmentedRegistry = pkgs.callPackage ./_registry.nix { };
+        precompile = false;
     }
     [
         "Pluto"
@@ -14,6 +15,7 @@ pkgs.julia.withPackages.override
         "YaoPlots"
         "CairoMakie"
         "WGLMakie"
+        "Plots"
         "QuantumToolbox"
         "OptimalTransport"
         "ExactOptimalTransport"
@@ -23,8 +25,8 @@ pkgs.julia.withPackages.override
         "OffsetArrays"
         "StatsBase"
         "Optimisers"
-        "HDF5"
         "ProgressLogging"
+        "Hyperopt"
 
         # Perf
         "JET"

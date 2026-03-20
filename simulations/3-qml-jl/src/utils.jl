@@ -44,11 +44,11 @@ end
 
 get_optimizer_name(strategy::TrainingStrategy) = hasproperty(strategy, :optimizer) ? string(nameof(typeof(strategy.optimizer))) : string(nameof(typeof(strategy)))
 
-function record_run(model, strategy, training_plot, target)
-    # 1. Create a unique folder inside simulations/3-qddpm-jl/saves/
-    timestamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS")
+function record_run(model, strategy, training_plot, target; save_dir_base = "saves")
+    # 1. Create a unique folder inside save_dir_base/
+    timestamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS_sss")
     opt_name = get_optimizer_name(strategy)
-    save_dir = joinpath("saves", "$(timestamp)_$(opt_name)")
+    save_dir = joinpath(save_dir_base, "$(timestamp)_$(opt_name)")
     mkpath(save_dir)
 
     # 2. Calculate the approximate final loss (avg of last 50 iterations of final step)
