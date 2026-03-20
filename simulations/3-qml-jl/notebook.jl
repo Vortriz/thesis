@@ -13,32 +13,20 @@ begin
     Pkg.instantiate()
 end
 
-# ╔═╡ c9dfae33-aef0-42e5-b43c-87d542a1b428
-using Random
-
 # ╔═╡ 9ba0daf4-2b8e-47c8-beb4-796bfa13f4f5
 begin
 	include("src/base.jl")
 	using .QDDPM
 end
 
-# ╔═╡ 7022827b-1a65-4e7d-9b4f-e167e5b5a648
-using Yao
-
-# ╔═╡ 5de59778-07cd-496b-84ec-4700db380ea6
-using OffsetArrays
-
-# ╔═╡ 89ae653e-c451-4071-ad70-a378f234c1c9
-using WGLMakie
+# ╔═╡ c9dfae33-aef0-42e5-b43c-87d542a1b428
+using Random
 
 # ╔═╡ 91c975f1-500d-4f56-8dc0-65075bc54974
 using Optimisers
 
-# ╔═╡ 09336af5-1287-4110-9e01-1b0b65972254
-using BenchmarkTools
-
-# ╔═╡ d9bb3bd3-ba26-4cff-91dc-da40d5341fa5
-using StatsBase
+# ╔═╡ 5de59778-07cd-496b-84ec-4700db380ea6
+using OffsetArrays
 
 # ╔═╡ 3cc2773d-624a-40a1-8839-8e1efde82147
 # ╠═╡ disabled = true
@@ -46,15 +34,21 @@ using StatsBase
 using JET, BenchmarkTools
   ╠═╡ =#
 
+# ╔═╡ d9bb3bd3-ba26-4cff-91dc-da40d5341fa5
+# ╠═╡ disabled = true
+#=╠═╡
+using StatsBase
+  ╠═╡ =#
+
 # ╔═╡ 06399d96-599f-40ab-b2f7-f8f6955617ca
 begin
-	const T = 2
+	const T = 5
 	model = Model(
-	    n_qubits = 1,
-	    n_ancilla = 1,
+	    n_qubits = 4,
+	    n_ancilla = 2,
 	    T = T,
 	    forward_ensemble_size = 1000,
-	    n_layers = 2,
+	    n_layers = 12,
 	    backward_ensemble_size = 100,
 	    rng = MersenneTwister(124),
 	)
@@ -64,19 +58,22 @@ begin
 	# scramble!(model; weight_schedule=logrange(0.4, 1.3; length=T))
 	# scramble!(model; weight_schedule=range(0.4, 1.2; length=T))
 
+	# training_strategy = GradZygote(
+	# 	loss_function = wasserstein_distance,
+	# 	optimizer = Optimisers.AMSGrad(0.01),
+	# 	iter_schedule = [80, 100, 100, 100, 100],
+	# )
 	# training_strategy = GradEnzyme(
 	# 	loss_function = wasserstein_distance,
 	# 	iter_schedule = vcat(fill(1700, 2), fill(2000, T-3), fill(1800, 1)),
 	# 	# iter_schedule = intrange(1200, 1100; length=T),
 	# 	hyper_params = (lr=0.005,)
 	# )
-	training_strategy = GradZygote(
-		loss_function = wasserstein_distance,
-		optimizer = Optimisers.AMSGrad(0.03),
-		iter_schedule = [30, 50, 50, 50, 60],
-		# iter_schedule = vcat(fill(400, 1), fill(600, T-2), fill(600, 1)),
-		# iter_schedule = intrange(1200, 1100; length=T),
-	)
+	# training_strategy = DirectGradZygote(
+	# 	loss_function = wasserstein_distance,
+	# 	optimizer = Optimisers.AMSGrad(0.01),
+	# 	n_iters = 300
+	# )
 	# training_strategy = QNSPSA(;
 	# 	loss_function = wasserstein_distance,
 	# 	iter_schedule = fill(1500, T),
@@ -85,6 +82,12 @@ begin
 	# 	hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5), # good (nq=2)
 	# 	# hyper_params = (η=7e-2, ϵ=5e-2, β=1e-2, history_length=3),
 	# )
+	training_strategy = DirectQNSPSA(
+		loss_function = wasserstein_distance,
+		n_iters = 2000,
+    	# hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5),
+		hyper_params = (η=7e-2, ϵ=5e-2, β=1e-1, history_length=5),
+	)
 	# training_strategy = Rotosolve(
 	# 	model;
 	# 	loss_function = wasserstein_distance,
@@ -109,7 +112,7 @@ begin
 	# 	iter_schedule = intrange(1, 2; length=T)
 	# )
 	train!(model, training_strategy)
-end
+end;
 
 # ╔═╡ 0d3e791f-4d38-4c2a-8e56-180cf0eac7cf
 # ╠═╡ disabled = true
@@ -157,7 +160,7 @@ wasserstein_distance(
 # ╠═╡ disabled = true
 #=╠═╡
 if training_strategy.loss_history .|> sum |> sum != 0
-	save("$(model.n_qubits)q_eval_hist.png", elh)
+	CairoMakie.save("$(model.n_qubits)q_eval_hist.png", elh)
 end
   ╠═╡ =#
 
@@ -195,14 +198,11 @@ losses |> std
 
 # ╔═╡ Cell order:
 # ╟─b37d79fa-f9a8-11f0-8be3-37c0117d6175
-# ╠═c9dfae33-aef0-42e5-b43c-87d542a1b428
-# ╠═3cc2773d-624a-40a1-8839-8e1efde82147
 # ╠═9ba0daf4-2b8e-47c8-beb4-796bfa13f4f5
-# ╠═7022827b-1a65-4e7d-9b4f-e167e5b5a648
-# ╠═5de59778-07cd-496b-84ec-4700db380ea6
-# ╠═89ae653e-c451-4071-ad70-a378f234c1c9
+# ╠═c9dfae33-aef0-42e5-b43c-87d542a1b428
 # ╠═91c975f1-500d-4f56-8dc0-65075bc54974
-# ╠═09336af5-1287-4110-9e01-1b0b65972254
+# ╠═5de59778-07cd-496b-84ec-4700db380ea6
+# ╠═3cc2773d-624a-40a1-8839-8e1efde82147
 # ╠═06399d96-599f-40ab-b2f7-f8f6955617ca
 # ╠═0d3e791f-4d38-4c2a-8e56-180cf0eac7cf
 # ╠═013ab426-5d6d-4d38-b34a-ae8ecc8458dc
