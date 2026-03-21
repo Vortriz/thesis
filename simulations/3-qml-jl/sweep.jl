@@ -36,14 +36,14 @@ println("Number of workers: $(nprocs())")
 # We make it available everywhere so workers can call it
 @everywhere function run_sweep_trial(strategy_factory::Function, hyper_params::NamedTuple, job_dir::String)
     # Define model parameters (adjust as needed)
-    T = 5
+    T = 7
 
     model = Model(
-        n_qubits=4,
-        n_ancilla=2,
+        n_qubits=6,
+        n_ancilla=3,
         T=T,
         forward_ensemble_size=1000,
-        n_layers=12,
+        n_layers=18,
         backward_ensemble_size=100,
         rng=MersenneTwister(124),
     )
@@ -93,15 +93,15 @@ end
     grad_factory(p) = GradZygote(
         loss_function=wasserstein_distance,
         optimizer=Optimisers.AMSGrad(p.η),
-        iter_schedule=fill(500, 5),
+        iter_schedule=[500, 700, 800, 800, 800, 800, 800],
     )
 end
 
 # Choose your factory here
 current_factory = grad_factory
 
-ho = @phyperopt for i = 30, # Total number of samples
-    η = exp10.(range(-3, -0.7, length=20))
+ho = @phyperopt for i = 50, # Total number of samples
+    η = exp10.(range(-3, -0.4, length=25))
     # ϵ = [0.01, 0.05, 0.1],
     # β = [0.01, 0.05, 0.1]
 
@@ -120,7 +120,7 @@ println("Best Hyperparameters: ", ho.minimizer)
 open(joinpath(job_dir, "sweep_result_summary.txt"), "w") do f
     println(f, "--- Hyperopt Sweep Result ---")
     println(f, "Timestamp: ", job_timestamp)
-    println(f, "Total Samples: ", 30)
+    println(f, "Total Samples: ", 50)
     println(f, "Best Loss: ", ho.minimum)
     println(f, "\n--- Best Parameters ---")
     for (k, v) in zip(keys(ho.params), ho.minimizer)
