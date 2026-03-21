@@ -1,11 +1,7 @@
 using Distributed
 using Dates
 
-# 1. Setup workers (Adjust the number of workers as needed)
-if nprocs() == 1
-    addprocs(36) # Change this to match your CPU cores
-end
-
+# 1. Setup workers (Managed via julia -p N)
 @everywhere begin
     using Pkg
     Pkg.activate(Base.current_project())
@@ -18,7 +14,7 @@ Pkg.instantiate()
 using .QDDPM
 @everywhere begin
     using Main.QDDPM
-    using Random, Statistics
+    using Random, Statistics, Optimisers
 end
 
 using Hyperopt
@@ -38,7 +34,7 @@ println("Number of workers: $(nprocs())")
 
 # 3. Define the objective function for the sweep
 # We make it available everywhere so workers can call it
-@everywhere function run_sweep_trial(η, ϵ, β, job_dir)
+@everywhere function run_sweep_trial(strategy_factory::Function, hyper_params::NamedTuple, job_dir::String)
     # Define model parameters (adjust as needed)
     T = 1
 
@@ -56,39 +52,51 @@ println("Number of workers: $(nprocs())")
     # scramble!(model; weight_schedule=logrange(0.8, 2.4; length=T))
     scramble!(model; weight_schedule=[10])
 
-    # Using DirectQNSPSA as example strategy for sweep
-    strategy = DirectQNSPSA(
-        loss_function=wasserstein_distance,
-        n_iters=2500, # Reduced iterations for faster sweep
-        hyper_params=(η=η, ϵ=ϵ, β=β, history_length=5),
-    )
+    # Build strategy using the factory and provided hyperparameters
+    strategy = strategy_factory(hyper_params)
 
     # Train the model
     train!(model, strategy)
 
-    # Record the run inside the job directory
-    # Generate plot (CairoMakie might be slow or require specific setup on headless workers)
+    # Record the run
     bplh = plot_training_loss_history(model, strategy)
-
-    record_run(model, strategy, bplh, "Direct (Sweep Trial)"; save_dir_base=job_dir)
+    record_run(model, strategy, bplh, "Sweep Trial"; save_dir_base=job_dir)
 
     # Return the final loss (average of last 50 iterations)
     if isempty(strategy.loss_history) || isempty(strategy.loss_history[1])
-        return 1.0 # High loss for failed runs
+        return 1.0
     end
 
     return mean(strategy.loss_history[1][max(1, end - 50):end])
 end
 
-# 4. Perform the parallel hyperparameter search
-# Sampling: η (log space), ϵ and β from discrete choices
-ho = @phyperopt for i = 30, # Total number of samples
-    η = exp10.(range(-3, -0.7, length=20)),
-    ϵ = [0.01, 0.05, 0.1],
-    β = [0.01, 0.05, 0.1]
+@everywhere begin
+    # 4. Perform the parallel hyperparameter search
+    qnspsa_factory(p) = DirectQNSPSA(
+        loss_function=wasserstein_distance,
+        n_iters=51,
+        hyper_params=(η=p.η, ϵ=p.ϵ, β=p.β, history_length=5)
+    )
 
-    # Each iteration runs this block (on workers if using @phyperopt)
-    run_sweep_trial(η, ϵ, β, job_dir)
+    grad_factory(p) = DirectGradZygote(
+        loss_function=wasserstein_distance,
+        optimizer=Optimisers.AMSGrad(p.η),
+        n_iters=500
+    )
+end
+
+# Choose your factory here
+current_factory = grad_factory
+
+ho = @phyperopt for i = 2, # Total number of samples
+    η = exp10.(range(-3, -0.7, length=20))
+    # ϵ = [0.01, 0.05, 0.1],
+    # β = [0.01, 0.05, 0.1]
+
+    # Package hyperparameters into a NamedTuple
+    params = (η=η,)
+
+    run_sweep_trial(current_factory, params, job_dir)
 end
 
 println("\n--- Sweep Completed ---")
