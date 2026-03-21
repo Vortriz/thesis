@@ -1,0 +1,11 @@
+--- Run Result ---
+Final Loss: 0.848465
+
+--- Hyperparameters ---
+HyperParams: (η = 0.00230758599619549, ϵ = 0.05, β = 0.01, history_length = 5)
+n_qubits:  4
+n_layers:  60
+n_ancilla: 2
+T:         1
+Schedule:  [2500]
+Target:    Direct (Sweep Trial)

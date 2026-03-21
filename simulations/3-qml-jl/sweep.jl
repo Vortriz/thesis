@@ -3,7 +3,7 @@ using Dates
 
 # 1. Setup workers (Adjust the number of workers as needed)
 if nprocs() == 1
-    addprocs(2) # Change this to match your CPU cores
+    addprocs(36) # Change this to match your CPU cores
 end
 
 @everywhere begin
@@ -23,6 +23,8 @@ end
 
 using Hyperopt
 using Plots
+
+# For headless environment
 ENV["GKSwstype"] = "100"
 
 # 2. Setup job directory for this specific sweep
@@ -38,26 +40,27 @@ println("Number of workers: $(nprocs())")
 # We make it available everywhere so workers can call it
 @everywhere function run_sweep_trial(η, ϵ, β, job_dir)
     # Define model parameters (adjust as needed)
-    T = 5
+    T = 1
 
     model = Model(
-        n_qubits = 2,
-        n_ancilla = 1,
-        T = T,
-        forward_ensemble_size = 1000,
-        n_layers = 6,
-        backward_ensemble_size = 100,
-        rng = MersenneTwister(124),
+        n_qubits=4,
+        n_ancilla=2,
+        T=T,
+        forward_ensemble_size=1000,
+        n_layers=60,
+        backward_ensemble_size=100,
+        rng=MersenneTwister(124),
     )
 
     initialize_forward_ensemble!(model; spread=0.05)
-    scramble!(model; weight_schedule=logrange(0.8, 2.4; length=T))
+    # scramble!(model; weight_schedule=logrange(0.8, 2.4; length=T))
+    scramble!(model; weight_schedule=[10])
 
     # Using DirectQNSPSA as example strategy for sweep
     strategy = DirectQNSPSA(
-        loss_function = wasserstein_distance,
-        n_iters = 51, # Reduced iterations for faster sweep
-        hyper_params = (η=η, ϵ=ϵ, β=β, history_length=5),
+        loss_function=wasserstein_distance,
+        n_iters=2500, # Reduced iterations for faster sweep
+        hyper_params=(η=η, ϵ=ϵ, β=β, history_length=5),
     )
 
     # Train the model
@@ -67,22 +70,22 @@ println("Number of workers: $(nprocs())")
     # Generate plot (CairoMakie might be slow or require specific setup on headless workers)
     bplh = plot_training_loss_history(model, strategy)
 
-    record_run(model, strategy, bplh, "Direct (Sweep Trial)"; save_dir_base = job_dir)
+    record_run(model, strategy, bplh, "Direct (Sweep Trial)"; save_dir_base=job_dir)
 
     # Return the final loss (average of last 50 iterations)
     if isempty(strategy.loss_history) || isempty(strategy.loss_history[1])
         return 1.0 # High loss for failed runs
     end
 
-    return mean(strategy.loss_history[1][max(1, end-50):end])
+    return mean(strategy.loss_history[1][max(1, end - 50):end])
 end
 
 # 4. Perform the parallel hyperparameter search
 # Sampling: η (log space), ϵ and β from discrete choices
-ho = @phyperopt for i = 2, # Total number of samples
-                  η = exp10.(range(-3, -0.7, length=20)),
-                  ϵ = [0.01, 0.05, 0.1],
-                  β = [0.01, 0.05, 0.1]
+ho = @phyperopt for i = 30, # Total number of samples
+    η = exp10.(range(-3, -0.7, length=20)),
+    ϵ = [0.01, 0.05, 0.1],
+    β = [0.01, 0.05, 0.1]
 
     # Each iteration runs this block (on workers if using @phyperopt)
     run_sweep_trial(η, ϵ, β, job_dir)
@@ -96,7 +99,7 @@ println("Best Hyperparameters: ", ho.minimizer)
 open(joinpath(job_dir, "sweep_result_summary.txt"), "w") do f
     println(f, "--- Hyperopt Sweep Result ---")
     println(f, "Timestamp: ", job_timestamp)
-    println(f, "Total Samples: ", 20)
+    println(f, "Total Samples: ", 30)
     println(f, "Best Loss: ", ho.minimum)
     println(f, "\n--- Best Parameters ---")
     for (k, v) in zip(keys(ho.params), ho.minimizer)
