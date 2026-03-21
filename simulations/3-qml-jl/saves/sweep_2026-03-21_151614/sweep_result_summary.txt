@@ -1,0 +1,7 @@
+--- Hyperopt Sweep Result ---
+Timestamp: 2026-03-21_151614
+Total Samples: 30
+Best Loss: 0.0025242580017722158
+
+--- Best Parameters ---
+1: 0.06543189129712969

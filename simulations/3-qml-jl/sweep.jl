@@ -36,21 +36,21 @@ println("Number of workers: $(nprocs())")
 # We make it available everywhere so workers can call it
 @everywhere function run_sweep_trial(strategy_factory::Function, hyper_params::NamedTuple, job_dir::String)
     # Define model parameters (adjust as needed)
-    T = 1
+    T = 5
 
     model = Model(
         n_qubits=4,
         n_ancilla=2,
         T=T,
         forward_ensemble_size=1000,
-        n_layers=60,
+        n_layers=12,
         backward_ensemble_size=100,
         rng=MersenneTwister(124),
     )
 
     initialize_forward_ensemble!(model; spread=0.05)
     # scramble!(model; weight_schedule=logrange(0.8, 2.4; length=T))
-    scramble!(model; weight_schedule=[10])
+    scramble!(model; weight_schedule=fill(1.0, T))
 
     # Build strategy using the factory and provided hyperparameters
     strategy = strategy_factory(hyper_params)
@@ -72,28 +72,41 @@ end
 
 @everywhere begin
     # 4. Perform the parallel hyperparameter search
-    qnspsa_factory(p) = DirectQNSPSA(
+    directqnspsa_factory(p) = DirectQNSPSA(
         loss_function=wasserstein_distance,
-        n_iters=51,
+        n_iters=2500,
         hyper_params=(η=p.η, ϵ=p.ϵ, β=p.β, history_length=5)
     )
 
-    grad_factory(p) = DirectGradZygote(
+    directgrad_factory(p) = DirectGradZygote(
         loss_function=wasserstein_distance,
         optimizer=Optimisers.AMSGrad(p.η),
-        n_iters=500
+        n_iters=2500
+    )
+
+    qnspsa_factory(p) = QNSPSA(
+        loss_function=wasserstein_distance,
+        hyper_params=(η=p.η, ϵ=p.ϵ, β=p.β, history_length=5),
+        iter_schedule=fill(1500, 5),
+    )
+
+    grad_factory(p) = GradZygote(
+        loss_function=wasserstein_distance,
+        optimizer=Optimisers.AMSGrad(p.η),
+        iter_schedule=fill(500, 5),
     )
 end
 
 # Choose your factory here
 current_factory = grad_factory
 
-ho = @phyperopt for i = 2, # Total number of samples
+ho = @phyperopt for i = 30, # Total number of samples
     η = exp10.(range(-3, -0.7, length=20))
     # ϵ = [0.01, 0.05, 0.1],
     # β = [0.01, 0.05, 0.1]
 
     # Package hyperparameters into a NamedTuple
+    # params = (η=η, ϵ=ϵ, β=β)
     params = (η=η,)
 
     run_sweep_trial(current_factory, params, job_dir)

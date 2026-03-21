@@ -1,0 +1,11 @@
+--- Run Result ---
+Final Loss: 0.53062
+
+--- Hyperparameters ---
+Optimizer: AMSGrad(eta=0.012287787272810432, beta=(0.9, 0.999), epsilon=1.0e-8)
+n_qubits:  4
+n_layers:  12
+n_ancilla: 2
+T:         5
+Schedule:  [2500]
+Target:    Sweep Trial
