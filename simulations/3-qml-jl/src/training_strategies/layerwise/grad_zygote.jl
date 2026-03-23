@@ -34,7 +34,17 @@ function train_step!(model::Model, strategy::GradZygote, t::Int, autoregressive_
 
     full_target_matrix = model.forward_ensembles[begin:end, 0] |> ensemble_to_matrix
 
-    @progress for k in 1:strategy.iter_schedule[t]
+    n_iters = strategy.iter_schedule[t]
+    base_lr = strategy.optimizer.eta
+
+    @progress for k in 1:n_iters
+        # Cosine Annealing Learning Rate Schedule with η_min
+        # We decay to 1% of the base learning rate to prevent freezing
+        η_min = 0.01
+        lr_scale = η_min + (1 - η_min) * 0.5 * (1 + cos(pi * k / n_iters))
+        current_lr = base_lr * lr_scale
+        Optimisers.adjust!(opt_state, current_lr)
+
         indices = sample(
             1:model.forward_ensemble_size,
             model.backward_ensemble_size,

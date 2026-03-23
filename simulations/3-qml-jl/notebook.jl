@@ -34,21 +34,15 @@ using OffsetArrays
 using JET, BenchmarkTools
   ╠═╡ =#
 
-# ╔═╡ d9bb3bd3-ba26-4cff-91dc-da40d5341fa5
-# ╠═╡ disabled = true
-#=╠═╡
-using StatsBase
-  ╠═╡ =#
-
 # ╔═╡ 06399d96-599f-40ab-b2f7-f8f6955617ca
 begin
-	const T = 5
+	const T = 4
 	model = Model(
-	    n_qubits = 4,
-	    n_ancilla = 2,
+	    n_qubits = 6,
+	    n_ancilla = 3,
 	    T = T,
 	    forward_ensemble_size = 1000,
-	    n_layers = 12,
+	    n_layers = 18,
 	    backward_ensemble_size = 100,
 	    rng = MersenneTwister(124),
 	)
@@ -58,11 +52,11 @@ begin
 	# scramble!(model; weight_schedule=logrange(0.4, 1.3; length=T))
 	# scramble!(model; weight_schedule=range(0.4, 1.2; length=T))
 
-	# training_strategy = GradZygote(
-	# 	loss_function = wasserstein_distance,
-	# 	optimizer = Optimisers.AMSGrad(0.01),
-	# 	iter_schedule = [80, 100, 100, 100, 100],
-	# )
+	training_strategy = GradZygote(
+		loss_function = wasserstein_distance,
+		optimizer = Optimisers.AMSGrad(0.042169650342858224),
+		iter_schedule = [1000, 1000, 1000, 1000],
+	)
 	# training_strategy = GradEnzyme(
 	# 	loss_function = wasserstein_distance,
 	# 	iter_schedule = vcat(fill(1700, 2), fill(2000, T-3), fill(1800, 1)),
@@ -82,12 +76,12 @@ begin
 	# 	hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5), # good (nq=2)
 	# 	# hyper_params = (η=7e-2, ϵ=5e-2, β=1e-2, history_length=3),
 	# )
-	training_strategy = DirectQNSPSA(
-		loss_function = wasserstein_distance,
-		n_iters = 2000,
-    	# hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5),
-		hyper_params = (η=7e-2, ϵ=5e-2, β=1e-1, history_length=5),
-	)
+	# training_strategy = DirectQNSPSA(
+	# 	loss_function = wasserstein_distance,
+	# 	n_iters = 2000,
+ #    	# hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5),
+	# 	hyper_params = (η=7e-2, ϵ=5e-2, β=1e-1, history_length=5),
+	# )
 	# training_strategy = Rotosolve(
 	# 	model;
 	# 	loss_function = wasserstein_distance,
@@ -162,6 +156,12 @@ wasserstein_distance(
 if training_strategy.loss_history .|> sum |> sum != 0
 	CairoMakie.save("$(model.n_qubits)q_eval_hist.png", elh)
 end
+  ╠═╡ =#
+
+# ╔═╡ d9bb3bd3-ba26-4cff-91dc-da40d5341fa5
+# ╠═╡ disabled = true
+#=╠═╡
+using StatsBase
   ╠═╡ =#
 
 # ╔═╡ 8ea0e4d7-dbbf-4d18-a8a6-4c99fad55b55
