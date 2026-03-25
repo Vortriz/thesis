@@ -36,7 +36,7 @@ println("Number of workers: $(nprocs())")
 # We make it available everywhere so workers can call it
 @everywhere function run_sweep_trial(strategy_factory::Function, hyper_params::NamedTuple, job_dir::String)
     # Define model parameters (adjust as needed)
-    T = 7
+    T = 6
 
     model = Model(
         n_qubits=6,
@@ -74,7 +74,7 @@ end
     # 4. Perform the parallel hyperparameter search
     directqnspsa_factory(p) = DirectQNSPSA(
         loss_function=wasserstein_distance,
-        n_iters=2500,
+        n_iters=3000,
         hyper_params=(η=p.η, ϵ=p.ϵ, β=p.β, history_length=5)
     )
 
@@ -98,16 +98,16 @@ end
 end
 
 # Choose your factory here
-current_factory = grad_factory
+current_factory = directqnspsa_factory
 
-ho = @phyperopt for i = 50, # Total number of samples
-    η = exp10.(range(-3, -0.4, length=25))
-    # ϵ = [0.01, 0.05, 0.1],
-    # β = [0.01, 0.05, 0.1]
+ho = @phyperopt for i = 30, # Total number of samples
+    η = exp10.(range(-3, -0.4, length=25)),
+    ϵ = [0.01, 0.05, 0.1],
+    β = [0.01, 0.05, 0.1]
 
     # Package hyperparameters into a NamedTuple
-    # params = (η=η, ϵ=ϵ, β=β)
-    params = (η=η,)
+    params = (η=η, ϵ=ϵ, β=β)
+    # params = (η=η,)
 
     run_sweep_trial(current_factory, params, job_dir)
 end
@@ -120,7 +120,7 @@ println("Best Hyperparameters: ", ho.minimizer)
 open(joinpath(job_dir, "sweep_result_summary.txt"), "w") do f
     println(f, "--- Hyperopt Sweep Result ---")
     println(f, "Timestamp: ", job_timestamp)
-    println(f, "Total Samples: ", 50)
+    println(f, "Total Samples: ", 30)
     println(f, "Best Loss: ", ho.minimum)
     println(f, "\n--- Best Parameters ---")
     for (k, v) in zip(keys(ho.params), ho.minimizer)
