@@ -36,7 +36,7 @@ using JET, BenchmarkTools
 
 # ╔═╡ 06399d96-599f-40ab-b2f7-f8f6955617ca
 begin
-	const T = 4
+	const T = 6
 	model = Model(
 	    n_qubits = 6,
 	    n_ancilla = 3,
@@ -52,11 +52,11 @@ begin
 	# scramble!(model; weight_schedule=logrange(0.4, 1.3; length=T))
 	# scramble!(model; weight_schedule=range(0.4, 1.2; length=T))
 
-	training_strategy = GradZygote(
-		loss_function = wasserstein_distance,
-		optimizer = Optimisers.AMSGrad(0.042169650342858224),
-		iter_schedule = [1000, 1000, 1000, 1000],
-	)
+	# training_strategy = GradZygote(
+	# 	loss_function = wasserstein_distance,
+	# 	optimizer = Optimisers.AMSGrad(0.042169650342858224),
+	# 	iter_schedule = [800, 800, 600, 600, 600, 600, 600],
+	# )
 	# training_strategy = GradEnzyme(
 	# 	loss_function = wasserstein_distance,
 	# 	iter_schedule = vcat(fill(1700, 2), fill(2000, T-3), fill(1800, 1)),
