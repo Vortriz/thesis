@@ -1,0 +1,3 @@
+- [ ] consistent use of Matrix/Ensemble/OffsetEnsemble
+    - [ ] perhaps convert those to structs with a common interface, e.g. `Ensemble` with fields `data::Matrix` and `offset::Int`
+- [ ] https://github.com/JuliaDynamics/DrWatson.jl
