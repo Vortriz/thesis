@@ -1,4 +1,4 @@
-export plot_bloch_sphere, plot_forward_fidelity_decay, plot_training_loss_history, plot_eval_loss_history
+export plot_bloch_sphere, plot_forward_fidelity_decay, plot_training_loss_history, plot_eval_loss_history, plot_qkr_localization
 
 function plot_bloch_sphere(ensemble::Union{OffsetEnsemble, Ensemble})
     if ensemble[begin].state.size[1] != 2
@@ -135,4 +135,27 @@ function plot_eval_loss_history(
     @show distances
 
     return fig
+end
+
+function plot_qkr_localization(model::Model, states::Ensemble)
+    n = length(states)
+    dims = 2^model.n_qubits
+    m_vec = [0:dims/2-1; -dims/2:-1]
+	avg_amplitudes = zeros(dims)
+	for ϕ in states |> ensemble_to_matrix |> eachcol
+		amplitudes = abs2.(ϕ)
+		_, idx = findmax(amplitudes)
+		circshift!(amplitudes, n-idx+1)
+		avg_amplitudes += amplitudes
+	end
+	avg_amplitudes /= n
+	fig = Figure()
+	ax = Axis(fig[1, 1], title="Localization of states", xlabel="m", ylabel="|ψ(p)|²)", yscale=log10)
+	scatter!(
+	    ax,
+		m_vec, avg_amplitudes,
+		markersize=3,
+		label=:none,
+	)
+	return fig
 end

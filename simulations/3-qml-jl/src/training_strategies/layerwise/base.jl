@@ -1,12 +1,15 @@
 export train!
 
-function train!(model::Model, strategy::StepwiseStrategy)
+function train!(model::Model, strategy::StepwiseStrategy;
+                initial_reg::Union{Nothing, ConcreteBatchedArrayReg} = nothing)
     @info "Strategy: $(typeof(strategy)) (Autoregressive)"
 
-    # Initialize with Haar random states (at t=T)
-    # Convert Ensemble -> ConcreteBatchedArrayReg
-    current_reg::ConcreteBatchedArrayReg =
-        generate_rand_ensemble(model.n_qubits, model.backward_ensemble_size) |> ensemble_to_batch
+    # Initialize current_reg
+    current_reg::ConcreteBatchedArrayReg = if isnothing(initial_reg)
+         generate_rand_ensemble(model.n_qubits, model.backward_ensemble_size) |> ensemble_to_batch
+    else
+        initial_reg
+    end
 
     @progress for t in model.T:-1:1
         # @info "Training timestep t=$t"

@@ -1,4 +1,51 @@
-export ensemble_to_matrix, ensemble_to_matrix!, ensemble_to_batch, generate_rand_ensemble, initialize_backward_ensemble, intrange, record_run
+export ensemble_to_matrix, ensemble_to_matrix!, ensemble_to_batch, matrix_to_ensemble, generate_rand_ensemble, initialize_backward_ensemble, intrange, record_run, save_weights, load_weights, generate_backward_pass
+
+function matrix_to_ensemble(matrix::Matrix{ComplexF64})::Ensemble
+    ensemble_size = size(matrix, 2)
+    ensemble = Ensemble(undef, ensemble_size)
+    for i in 1:ensemble_size
+        ensemble[i] = ConcreteArrayReg(matrix[:, i] |> v -> reshape(v, :, 1))
+    end
+    return ensemble
+end
+
+function save_weights(model::Model, path::String; old_weights::Union{Nothing, Matrix{Float64}} = nothing)
+    weights_to_save = if isnothing(old_weights)
+        model.trained_params
+    else
+        # Concatenate: new weights (T_new) and then old weights (T_old)
+        hcat(model.trained_params, old_weights)
+    end
+
+    # Save both weights and the target ensemble (at t=0)
+    target_ensemble = model.forward_ensembles[:, 0]
+
+    jldsave(path; trained_params = weights_to_save, target_ensemble = target_ensemble)
+    @info "Weights and target ensemble saved to $path (Total T = $(size(weights_to_save, 2)))"
+end
+
+function load_weights(path::String)
+    file = jldopen(path, "r")
+    weights = file["trained_params"]
+    target_ensemble = file["target_ensemble"]
+    close(file)
+    @info "Weights and target loaded from $path (T = $(size(weights, 2)))"
+    return weights, target_ensemble
+end
+
+function generate_backward_pass(model::Model, strategy::TrainingStrategy, weights::Matrix{Float64})
+    T_weights = size(weights, 2)
+    @info "Running full backward pass over loaded weights (T=$T_weights to 1)"
+    
+    current_reg::ConcreteBatchedArrayReg =
+        generate_rand_ensemble(model.n_qubits, model.backward_ensemble_size) |> ensemble_to_batch
+
+    @progress for t in T_weights:-1:1
+        denoised_matrix = denoise(model, strategy, current_reg, weights[:, t])
+        current_reg = ConcreteBatchedArrayReg(denoised_matrix, size(denoised_matrix, 2))
+    end
+    return current_reg
+end
 
 function Base.Matrix(ensemble::Ensemble)::Matrix{ComplexF64}
     n_qubits = size(ensemble[begin].state, 1)
@@ -44,7 +91,7 @@ end
 
 get_optimizer_name(strategy::TrainingStrategy) = hasproperty(strategy, :optimizer) ? string(nameof(typeof(strategy.optimizer))) : string(nameof(typeof(strategy)))
 
-function record_run(model, strategy, training_plot, target; save_dir_base = "saves")
+function record_run(model, strategy, training_plot, target; save_dir_base = "saves", old_weights::Union{Nothing, Matrix{Float64}} = nothing)
     # 1. Create a unique folder inside save_dir_base/
     timestamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS_sss")
     opt_name = get_optimizer_name(strategy)
@@ -76,6 +123,9 @@ function record_run(model, strategy, training_plot, target; save_dir_base = "sav
 
     # 4. Save the Plot
     save(joinpath(save_dir, "training_plot.png"), training_plot)
+
+    # 5. Save Weights
+    save_weights(model, joinpath(save_dir, "weights.jld2"); old_weights = old_weights)
 
     println("Recorded in: ", save_dir)
     println("Final Loss: ", round(final_loss, digits=4))

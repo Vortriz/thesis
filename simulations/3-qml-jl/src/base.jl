@@ -14,12 +14,14 @@ using StatsBase
 using OptimalTransport
 using ProgressLogging
 using Dates, Statistics
+using Bessels
+using JLD2
 
 # Order is important
 include("types.jl")
+include("model.jl") # Model must be defined before utils.jl which uses it for type hints
 include("utils.jl")
-include("losses.jl")
-include("model.jl")
+include("losses.jl") # Depends on utils.jl (Matrix(ensemble))
 include("forward.jl")
 include("training_strategies/direct/base.jl")
 include("training_strategies/layerwise/base.jl")

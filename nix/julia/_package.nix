@@ -27,6 +27,9 @@ pkgs.julia.withPackages.override
         "Optimisers"
         "ProgressLogging"
         "Hyperopt"
+        "Bessels"
+        "FFTW"
+        "JLD2"
 
         # Perf
         "JET"

@@ -1,6 +1,6 @@
 export initialize_forward_ensemble!, scramble!
 
-function initialize_forward_ensemble!(model::Model; spread::Float64)
+function initialize_forward_ensemble!(model::Model, ::Clustered; spread::Float64=0.05)
 	base_state = randn(model.rng, ComplexF64, 2^model.n_qubits)
     for i in 1:model.forward_ensemble_size
         model.forward_ensembles[i, 0] = (
@@ -11,6 +11,33 @@ function initialize_forward_ensemble!(model::Model; spread::Float64)
 				|> normalize!
 		)
     end
+end
+
+function initialize_forward_ensemble!(model::Model, ::QKRLocalized; K::Float64=12.0, ħₛ::Float64=0.7)
+    dims = 2^model.n_qubits
+    @assert model.forward_ensemble_size <= dims "For QKRLocalized distribution, the forward ensemble size must be less than or equal to the Hilbert space dimension (2^n_qubits)."
+
+    m_vec = [0:dims/2-1; -dims/2:-1]
+    U = zeros(ComplexF64, (dims, dims))
+
+	Threads.@threads for idx in CartesianIndices(U)
+		i, j = idx.I
+		m₁, m₂ = m_vec[i], m_vec[j]
+		d = m₂ - m₁
+		if d > dims/2  d -= dims end
+		if d < -dims/2 d += dims end
+		U[idx] = ℯ^(-im/2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
+	end
+
+	eigenstates = eigen(U).vectors
+
+	for i in 1:model.forward_ensemble_size
+	    model.forward_ensembles[i, 0] = (
+				eigenstates[:, i]
+				|> v -> reshape(v, :, 1)
+				|> ConcreteArrayReg
+		)
+	end
 end
 
 function scramble!(

@@ -35,21 +35,24 @@ function initialize_backward_ensemble(model::Model)
     return ensemble
 end
 
-function test(model::Model, strategy::TrainingStrategy)
-    backward_states = OffsetArrays.Origin(1, 0)(fill(zero_state(model.n_qubits), (model.backward_ensemble_size, model.T + 1)))
-    backward_states[:, model.T] = initialize_backward_ensemble(model)
+function test(model::Model, strategy::TrainingStrategy; weights::Union{Nothing, Matrix{Float64}} = nothing)
+    eval_weights = isnothing(weights) ? model.trained_params : weights
+    T_eval = size(eval_weights, 2)
 
-    for t in range(model.T, 1; step = -1)
+    backward_states = OffsetArrays.Origin(1, 0)(fill(zero_state(model.n_qubits), (model.backward_ensemble_size, T_eval + 1)))
+    backward_states[:, T_eval] = initialize_backward_ensemble(model)
+
+    for t in range(T_eval, 1; step = -1)
         # The denoise function returns a matrix of states
         output_matrix = denoise(
                 model,
                 strategy,
                 backward_states[:, t] |> OffsetArrays.no_offset_view |> ensemble_to_batch,
-                model.trained_params[:, t],
+                eval_weights[:, t],
             )
 
         # Convert the matrix of states to an ensemble of ArrayRegs
-        backward_states[:, t-1] = [output_matrix[:, i] for i in 1:model.backward_ensemble_size] .|> ArrayReg
+        backward_states[:, t-1] = matrix_to_ensemble(output_matrix)
     end
 
     return backward_states
