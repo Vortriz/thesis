@@ -29,17 +29,19 @@ In July, I worked on learning about Classical DDPM models and implemented a basi
 
 = Base
 
-We focused on the implementation by Zhang et al. @Zhang2024-wm. Here, we take an ensemble of states of our interest, gradually add noise to them via a Quantum Scrambling Circuit (QSC), then train multiple Parameterized Quantum Circuits (PQC) to denoise the ensemble step-by-step.
+We focused on the implementation by Zhang et al. @Zhang2024quddpm. Here, we take an ensemble of states of our interest, gradually add noise to them via a Quantum Scrambling Circuit (QSC), then train multiple Parameterized Quantum Circuits (PQC) to denoise the ensemble step-by-step.
 
 #figure(
-  image("../../assets/zhang2024/overview.png", height: 250pt),
-  caption: [Overview of Quantum DDPM \ Credits: @Zhang2024-wm],
+  image("/assets/images/zhang2024/overview.png", height: 250pt),
+  caption: [Overview of Quantum DDPM \ Credits: @Zhang2024quddpm],
 )
 
 Let there be ensembles of states $cal(E)_1$ and $cal(E)_2$ of size $n_1$ and $n_2$ respectively. Two loss functions are used here:
 
 - *Maximum Mean Discrepancy (MMD)*
-  $ cal(D)_"MMD" (cal(E)_1, cal(E)_2) = dash(F) (cal(E)_1, cal(E)_1) + dash(F) (cal(E)_2, cal(E)_2) - 2 dash(F) (cal(E)_1, cal(E)_2) $
+  $
+    cal(D)_"MMD" (cal(E)_1, cal(E)_2) = dash(F) (cal(E)_1, cal(E)_1) + dash(F) (cal(E)_2, cal(E)_2) - 2 dash(F) (cal(E)_1, cal(E)_2)
+  $
 
   where
 
@@ -49,7 +51,12 @@ Let there be ensembles of states $cal(E)_1$ and $cal(E)_2$ of size $n_1$ and $n_
   - Computationally efficient
 
 - *Wasserstein Distance*
-  $ W_2 (cal(E)_1, cal(E)_2) = min_P & chevron.l P, C chevron.r, \ s.t. quad & P bold(1)_n_1 = 1, \ & P bold(1)_n_2 = 1, \ & P_(i j) >= 0 $
+  $
+    W_2 (cal(E)_1, cal(E)_2) = min_P & chevron.l P, C chevron.r, \
+                           s.t. quad & P bold(1)_n_1 = 1, \
+                                     & P bold(1)_n_2 = 1, \
+                                     & P_(i j) >= 0
+  $
 
   where
 
@@ -69,7 +76,7 @@ I implemented the Quantum DDPM model as per the above paper using PyTorch. I use
 
 === Architectures
 
-For the distribution of simple states (clustered around the ground state), the original diffusion type model worked well. But Consistency type model @Song2023-jb worked even better, converging faster and yielding better results.
+For the distribution of simple states (clustered around the ground state), the original diffusion type model worked well. But Consistency type model @Song2023consistency worked even better, converging faster and yielding better results.
 
 For distribution of arbitrary states, the Consistency model did not work well.
 
@@ -82,14 +89,14 @@ Apart from the two loss functions mentioned, I experimented with a few other var
   - More computationally efficient than Wasserstein distance
 
 - *Inexact Proximal point method for exact Optimal Transport problem (IPOT)*
-  - Another approximation for Wasserstein distance but has theoretical guarantees of convergence to the Wasserstein distance @Xie2018-pc
+  - Another approximation for Wasserstein distance but has theoretical guarantees of convergence to the Wasserstein distance @Xie2018ipot
   - Computationally efficient
 
 === Optimizers
 
 - Adam optimizer worked well for most cases.
 - Rotosolve optimizer showed promise for smaller systems. One key advantage is that it does not require gradient calculations, making it potentially more efficient. More testing is needed.
-- @Xie2018-pc hints at a simpler gradient calculation method for the Wasserstein distance, which I am currently testing.
+- @Xie2018ipot hints at a simpler gradient calculation method for the Wasserstein distance, which I am currently testing.
 
 = Planned Work
 
@@ -99,4 +106,4 @@ I am also looking into implementing potentially better loss functions (e.g. Sink
 
 #pagebreak()
 
-#bibliography("references.bib")
+#bibliography("/references.bib")

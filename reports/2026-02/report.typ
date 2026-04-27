@@ -33,7 +33,7 @@ Firstly, I refactored my code to be more modular, which made it easier to experi
 
 == Analyzing a different training objective
 
-The original paper @Zhang2024-wm used a training objective that minimizes the Wasserstein distance between two distributions of states.
+The original paper @Zhang2024quddpm used a training objective that minimizes the Wasserstein distance between two distributions of states.
 
 While looking for alternatives, I came across the emerging field of Quantum Optimal Transport (QOT), which is a quantum analogue of classical optimal transport theory. In particular, I found several papers that propose quantum versions of the Wasserstein distance:
 
@@ -48,7 +48,7 @@ There is also the fact that these distances are defined for density matrices, wh
 
 == Optimizers
 
-The original paper @Zhang2024-wm used the Adam optimizer. I intended to find a good gradient-free optimizer, so I experimented with the following:
+The original paper @Zhang2024quddpm used the Adam optimizer. I intended to find a good gradient-free optimizer, so I experimented with the following:
 
 - *Rotosolve* @Ostaszewski2021rotosolve
   - A gradient-free optimizer that optimizes one parameter at a time by solving a small optimization problem.
@@ -75,4 +75,4 @@ I will also try out more gradient-based optimizers, such as AdamW, RAdam, etc.
 
 A more ambitious and interesting direction is to explore quantum Wasserstein distances as training objectives.
 
-#bibliography("references.bib")
+#bibliography("/references.bib")

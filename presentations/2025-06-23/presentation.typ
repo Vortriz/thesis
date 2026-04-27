@@ -168,4 +168,4 @@ The derivations were based on @higham2023.
 
 ==
 
-#bibliography("./references.bib")
+#bibliography("/references.bib")
