@@ -16,6 +16,7 @@ using ProgressLogging
 using Dates, Statistics
 using Bessels
 using JLD2
+using LaTeXStrings
 
 # Order is important
 include("types.jl")

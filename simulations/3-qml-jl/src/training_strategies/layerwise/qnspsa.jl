@@ -100,7 +100,7 @@ function train_step!(model::Model, strategy::QNSPSA, t::Int, current_reg::Concre
     # Hyperparameters
     ϵ = strategy.hyper_params.ϵ
 
-    for k in 1:strategy.iter_schedule[t]
+    @progress for k in 1:strategy.iter_schedule[t]
         # 1. Estimate Gradient (Standard SPSA)
         indices = sample(1:model.forward_ensemble_size, model.backward_ensemble_size, replace=false)
         target_ensemble = model.forward_ensembles[indices, t-1]

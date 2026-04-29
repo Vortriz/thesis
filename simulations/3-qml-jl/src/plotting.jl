@@ -15,8 +15,15 @@ function plot_bloch_sphere(ensemble::Union{OffsetEnsemble, Ensemble})
             s -> [expect(sigmax(), s), expect(sigmay(), s), expect(sigmaz(), s)] |> real,
     )
     add_points!(b, points)
-	# b.point_size = [10]
+	b.point_size = [3]
     fig, _ = render(b)
+
+    # To make the plot square and remove axes
+    ax = Axis(fig[1, 1], aspect=1)
+	hidedecorations!(ax)
+	hidespines!(ax)
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	resize_to_layout!(fig)
 
     return fig
 end
@@ -35,11 +42,12 @@ function plot_forward_fidelity_decay(model::Model)
     ax = Axis(
 		fig[1, 1],
 		# yscale = log10,
-		xlabel = "t",
+		xlabel = L"t",
 		ylabel = "MMD Distance \n (wrt Random Ensemble)",
 		title = "Forward fidelity decay (MMD)"
 	)
-    ax.xticks = 0:model.T
+    ax.xgridvisible = false
+    ax.ygridvisible = false
     ax.yticks = 0:0.2:1
     ylims!(ax, 0, 1)
 
@@ -72,7 +80,7 @@ function plot_training_loss_history(model::Model, strategy::StepwiseStrategy)
     fig = Figure()
     ax = Axis(
         fig[1, 1],
-        # yscale = log10
+        yscale = log10,
         xlabel = "Iterations",
         ylabel = "Loss",
         title = "Backward process loss history ($(strategy.loss_function |> nameof))",
@@ -94,7 +102,7 @@ function plot_training_loss_history(model::Model, strategy::StepwiseStrategy)
 			loss_hist[t]
 		)
     end
-    ylims!(ax, 0, 1)
+    ylims!(ax, 0.001, 1)
 
     return fig
 end

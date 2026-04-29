@@ -17,16 +17,16 @@
                 devshell = {
                     name = "julia";
                     motd = "";
-                    startup.default.text =
-                        let
-                            projectPath = "${juliaEnv.projectAndDepot.outPath}/project";
-                        in
-                        ''
-                            rm -f Project.toml
-                            cp ${projectPath}/Project.toml $PRJ_ROOT/
-                            rm -f Manifest.toml
-                            cp ${projectPath}/Manifest.toml $PRJ_ROOT/
-                        '';
+                    # startup.default.text =
+                    #     let
+                    #         projectPath = "${juliaEnv.projectAndDepot.outPath}/project";
+                    #     in
+                    #     ''
+                    #         rm -f Project.toml
+                    #         cp ${projectPath}/Project.toml $PRJ_ROOT/
+                    #         rm -f Manifest.toml
+                    #         cp ${projectPath}/Manifest.toml $PRJ_ROOT/
+                    #     '';
                 };
 
                 commands = [

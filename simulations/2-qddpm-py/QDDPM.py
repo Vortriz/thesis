@@ -81,7 +81,7 @@ def animate_bloch_sphere(forward_states):
     return animation.FuncAnimation(fig, animate, range(T + 1), blit=False, repeat=False)
 
 
-def plot_forward_fidelity_decay(forward_states):
+def plot_forward_fidelity_decay(forward_states, rng):
     """
     Calculates and plots the fidelity decay over time from the |0...0> state.
 
@@ -92,25 +92,20 @@ def plot_forward_fidelity_decay(forward_states):
     """
     T = forward_states.shape[0] - 1
     n_basis_states = forward_states.shape[2]
+    n_qubits = int(np.log2(n_basis_states))
+    n_forward_samples = forward_states.shape[1]
+
+    forward_states = torch.from_numpy(forward_states)
 
     fidelity_evolution = np.zeros(shape=T + 1)
     for t in range(T + 1):
-        mean_fidelity = np.mean(np.abs(forward_states[t][:, 0]) ** 2)
-        fidelity_evolution[t] = mean_fidelity
+        fidelity_evolution[t] = mmd_distance(forward_states[t], gen_haar_ensemle(n_qubits, n_forward_samples, rng))
 
     plt.figure()
     plt.plot(range(T + 1), fidelity_evolution, marker="o")
-    plt.plot(
-        [0, T],
-        [1 / n_basis_states] * 2,
-        "g--",
-        alpha=0.3,
-        label="Ideal Haar random fidelity",
-    )
     plt.xticks(np.arange(0, T + 1, 2))
     plt.yticks(np.arange(0, 1, 0.1))
     plt.ylim(0, 1)
-    plt.legend()
     plt.xlabel("Time")
     plt.ylabel("Fidelity")
     plt.title("Fidelity Evolution")
@@ -149,6 +144,28 @@ def wasserstein_distance(ensemble1, ensemble2):
     return ot.emd2(emt, emt, M=D)
 
 
+def gen_haar_ensemle(n_qubits, n_samples, rng):
+    """Generates Haar-random quantum ensemble.
+
+    Parameters
+    ----------
+    rng : int or np.random.Generator
+        The random state or generator for the unitary group generator.
+
+    Returns
+    -------
+    torch.Tensor, shape (n_samples, 2**n_qubits)
+        Normalized Haar-random initial states.
+    """
+    return torch.from_numpy(
+        unitary_group.rvs(
+            dim=2**n_qubits,
+            size=n_samples,
+            random_state=rng,
+        )[:, :, 0],
+    )
+
+
 def ema(data, span):
     """
     Computes the Exponential Moving Average (EMA) of data.
@@ -163,7 +180,7 @@ def ema(data, span):
     return ema_data
 
 
-def plot_loss_training_vs_initial(loss_history, title, ema_span=100):
+def plot_loss_training_vs_initial(loss_history, title, ema_span=10):
     """
     Plots MMD/Wasserstein loss of training states with respect to initial states (uses EMA smoothing).
     """
@@ -578,30 +595,6 @@ class BackwardProcess(nn.Module):
             denoising_loss_hist=denoising_loss_hist,
         )
 
-    def _gen_initial_backward_states(self, state):
-        """Generates initial Haar-random quantum states for the backward process.
-
-        These states represent the fully noisy state at time T, from which the
-        denoising process begins.
-
-        Parameters
-        ----------
-        state : int or np.random.Generator
-            The random state or generator for the unitary group generator.
-
-        Returns
-        -------
-        torch.Tensor, shape (n_backward_samples, 2**n_qubits)
-            Normalized Haar-random initial states.
-        """
-        return torch.from_numpy(
-            unitary_group.rvs(
-                dim=2**self.n_qubits,
-                size=self.n_backward_samples,
-                random_state=state,
-            )[:, :, 0],
-        )
-
     @no_type_check
     def _back_circuit(self, input_state, params):
         """Defines the parameterized quantum circuit for a single denoising step.
@@ -732,7 +725,7 @@ class BackwardProcess(nn.Module):
             requires_grad=True,
             dtype=torch.float64,
         )
-        optimizer = torch.optim.Adam([params], lr=0.0005)
+        optimizer = torch.optim.Adam([params], lr=0.01)
 
         loss_callable = (
             mmd_distance
@@ -785,7 +778,7 @@ class BackwardProcess(nn.Module):
             dtype=torch.float64,
         )
 
-        current_states = self._gen_initial_backward_states(rng)
+        current_states = gen_haar_ensemle(self.n_qubits, self.n_backward_samples, rng)
 
         with progress(total=self.T, title="Training...", remove_on_exit=True) as bar:
             for t in range(self.T - 1, -1, -1):
@@ -866,7 +859,7 @@ class BackwardProcess(nn.Module):
             (self.T + 1, self.n_backward_samples, 2**self.n_qubits),
             dtype=torch.complex128,
         )
-        backward_states[self.T] = self._gen_initial_backward_states(state)
+        backward_states[self.T] = gen_haar_ensemle(self.n_qubits, self.n_backward_samples, state)
 
         for t in range(self.T - 1, -1, -1):
             with torch.no_grad():

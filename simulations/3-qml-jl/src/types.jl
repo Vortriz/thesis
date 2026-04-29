@@ -14,10 +14,12 @@ const OffsetEnsemble = OffsetVector{ConcreteArrayReg, Ensemble}
 const OffsetEnsembleCollection = OffsetMatrix{ConcreteArrayReg, Matrix{ConcreteArrayReg}}
 
 
-export Distribution, clustered, qkrlocalized
+export Distribution, clustered, qkrlocalized, circle
 
 abstract type Distribution end
 struct Clustered <: Distribution end
 struct QKRLocalized <: Distribution end
+struct Circle <: Distribution end
 const clustered = Clustered()
 const qkrlocalized = QKRLocalized()
+const circle = Circle()

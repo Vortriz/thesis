@@ -39,7 +39,7 @@ mutable struct Model
 
         push!(
             circuit,
-            chain(n_qubits, put(i=>chain(Rx(0), Ry(0), Rz(0))) for i = 1:n_qubits),
+            chain(n_qubits, put(i=>chain(Rx(0), Ry(0), Rx(0))) for i = 1:n_qubits),
         )
 
         RZZ_combinations = combinations(1:n_qubits, 2)

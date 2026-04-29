@@ -41,7 +41,12 @@
             ];
 
             perSystem =
-                { self', ... }:
+                {
+                    self',
+                    lib,
+                    pkgs,
+                    ...
+                }:
                 {
                     pre-commit.settings.hooks = {
                         flake-checker = {
@@ -77,6 +82,11 @@
                                 statix.priority = 2;
                                 nixfmt.priority = 3;
                                 prettier.priority = 4;
+
+                                bibtex-tidy = {
+                                    command = lib.getExe pkgs.bibtex-tidy;
+                                    includes = [ "*.bib" ];
+                                };
                             };
                         };
                     };

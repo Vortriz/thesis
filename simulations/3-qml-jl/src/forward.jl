@@ -40,6 +40,21 @@ function initialize_forward_ensemble!(model::Model, ::QKRLocalized; K::Float64=1
 	end
 end
 
+function initialize_forward_ensemble!(model::Model, ::Circle)
+    @assert model.n_qubits == 1 "Circle distribution is only defined for 1 qubit."
+
+    phis = rand(Float64, model.forward_ensemble_size) * 2pi
+    for i in 1:model.forward_ensemble_size
+        model.forward_ensembles[i, 0] = (
+                [cos(phis[i]), sin(phis[i])]
+                .|> ComplexF64
+                |> v -> reshape(v, :, 1)
+                |> ConcreteArrayReg
+                |> normalize!
+        )
+    end
+end
+
 function scramble!(
     model::Model;
     weight_schedule

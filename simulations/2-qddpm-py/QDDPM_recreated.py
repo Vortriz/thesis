@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.19.11"
+__generated_with = "0.23.0"
 app = marimo.App(width="medium")
 
 with app.setup:
@@ -18,6 +18,7 @@ with app.setup:
         plot_forward_fidelity_decay,
         plot_loss_evaluation_vs_initial,
         plot_loss_training_vs_initial,
+        gen_haar_ensemle,
     )
 
     rng = np.random.default_rng(1234)
@@ -42,17 +43,17 @@ def _():
 @app.cell
 def _():
     fp1 = ForwardProcess(
-        n_qubits=1,
+        n_qubits=5,
         n_forward_samples=1000,
-        scale=0.08,
-        T=20,
-        schedule=np.linspace(0.5, 2.75, 20),
+        scale=0.03,
+        T=6,
+        schedule=np.linspace(0.5, 2, 6),
     )
     fp1.scramble(rng=rng)
     return (fp1,)
 
 
-@app.cell
+@app.cell(disabled=True)
 def _(fp1):
     fp1.save(mo.notebook_dir() / "data" / "1qubit_forward_process.h5")
     return
@@ -84,9 +85,7 @@ def _(fp1):
 
 @app.cell
 def _(fp1):
-    mo.mpl.interactive(plot_forward_fidelity_decay(fp1.forward_states)).style(
-        width="650px",
-    ).center()
+    plot_forward_fidelity_decay(fp1.forward_states, rng)
     return
 
 
@@ -151,10 +150,10 @@ def _():
 def _(fp1):
     bp1 = BackwardProcess().from_forward_process(
         fp1,
-        n_ancilla=1,
-        n_layers=4,
+        n_ancilla=3,
+        n_layers=16,
         n_backward_samples=100,
-        epochs=2000,
+        epochs=500,
         loss_function=LossFunction.WASSERSTEIN,
     )
     bp1.run_training(rng)
@@ -186,15 +185,9 @@ def _():
 
 
 @app.cell
-def _(bp1_loaded):
-    bp1_loaded.denoising_loss_hist[:, -2]
-    return
-
-
-@app.cell
-def _(bp1_loaded):
+def _(bp1):
     plot_loss_training_vs_initial(
-        bp1_loaded.denoising_loss_hist,
+        bp1.denoising_loss_hist,
         title="Loss distance of Training Ensemble",
     )
     return
@@ -294,148 +287,6 @@ def _(bloch_helper_alt, plt, qutip):
         ax = bloch_helper_alt(ax, sphere, samples)
         return fig
 
-    return (plot_bloch_sphere_alt,)
-
-
-@app.cell
-def _(forward_states1, plot_bloch_sphere_alt):
-    mo.mpl.interactive(
-        plot_bloch_sphere_alt(
-            torch.from_numpy(forward_states1[:, 0, :]),
-            rev=False,
-        ),
-    )
-    return
-
-
-@app.cell
-def _(bp1_loaded, plot_bloch_sphere_alt):
-    mo.mpl.interactive(
-        plot_bloch_sphere_alt(
-            bp1_loaded.run(state=rng)[:, 6, :],
-            rev=True,
-        ),
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    # 2 qubits
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Forward Process
-    """)
-    return
-
-
-@app.cell
-def _():
-    fp2 = ForwardProcess(
-        n_qubits=2,
-        n_forward_samples=1000,
-        scale=0.05,
-        T=8,
-        schedule=np.linspace(0.3, 4, 10),
-    )
-    fp2.scramble(rng=rng)
-    return (fp2,)
-
-
-@app.cell
-def _(fp2):
-    fp2.save(mo.notebook_dir() / "data" / f"{fp2.n_qubits}qubit_forward_process.h5")
-    return
-
-
-@app.cell
-def _(fp2):
-    mo.mpl.interactive(plot_forward_fidelity_decay(fp2.forward_states)).style(
-        width="650px",
-    ).center()
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Backward Process
-    """)
-    return
-
-
-@app.cell
-def _(fp2):
-    bp2 = BackwardProcess().from_forward_process(
-        fp2,
-        n_ancilla=1,
-        n_layers=6,
-        n_backward_samples=100,
-        epochs=1000,
-        loss_function=LossFunction.WASSERSTEIN,
-    )
-    bp2.run_training(rng)
-    return (bp2,)
-
-
-@app.cell
-def _(bp2):
-    bp2.save(mo.notebook_dir() / "data" / f"{bp2.n_qubits}qubit_backward_process.h5")
-    return
-
-
-@app.cell
-def _():
-    with h5py.File(mo.notebook_dir() / "data" / "2qubit_forward_process.h5", "r") as f2:
-        forward_states2 = f2["forward_states"][:]
-    bp2_loaded = BackwardProcess.from_trained_params(
-        mo.notebook_dir() / "data" / "2qubit_backward_process.h5",
-    )
-    return bp2_loaded, forward_states2
-
-
-@app.cell
-def _(bp2_loaded):
-    plot_loss_training_vs_initial(
-        bp2_loaded.denoising_loss_hist,
-        title="MMD of Training Ensemble with respect to Initial Ensemble",
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Evaluation
-    """)
-    return
-
-
-@app.cell
-def _(bp2_loaded, forward_states2):
-    plot_loss_evaluation_vs_initial(
-        LossFunction.WASSERSTEIN,
-        bp2_loaded.run(state=rng),
-        forward_states2[0],
-        title="MMD of Evaluated Ensemble (from Training Set) w.r.t. Initial Ensemble",
-    )
-    return
-
-
-@app.cell
-def _(bp2_loaded, forward_states2):
-    plot_loss_evaluation_vs_initial(
-        LossFunction.WASSERSTEIN,
-        bp2_loaded.run(state=24),
-        forward_states2[0],
-        title="MMD of Evaluated Ensemble (from Testing Set) w.r.t. Initial Ensemble",
-    )
     return
 
 

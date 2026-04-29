@@ -18,6 +18,7 @@
                 ++ (with pkgs; [
                     uv
                     ruff
+                    nodejs_latest
                 ]);
 
                 env = [

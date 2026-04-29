@@ -1,3 +1,5 @@
 - [ ] consistent use of Matrix/Ensemble/OffsetEnsemble
     - [ ] perhaps convert those to structs with a common interface, e.g. `Ensemble` with fields `data::Matrix` and `offset::Int`
+    - [ ] struct for loss function that taken in the function and the name of the loss function, e.g. `LossFunction` with fields `func::Function` and `name::String`
 - [ ] https://github.com/JuliaDynamics/DrWatson.jl
+- [ ] extract common code from reports and presentations

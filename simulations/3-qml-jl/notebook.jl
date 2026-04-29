@@ -28,6 +28,9 @@ using Optimisers
 # ╔═╡ 5de59778-07cd-496b-84ec-4700db380ea6
 using OffsetArrays
 
+# ╔═╡ 12418940-8359-4212-9457-c9916cd1f8c9
+using CairoMakie
+
 # ╔═╡ 3cc2773d-624a-40a1-8839-8e1efde82147
 # ╠═╡ disabled = true
 #=╠═╡
@@ -36,30 +39,30 @@ using JET, BenchmarkTools
 
 # ╔═╡ 06399d96-599f-40ab-b2f7-f8f6955617ca
 begin
-	const T = 2
+	const T = 6
 	model = Model(
-	    n_qubits = 1,
-	    n_ancilla = 1,
+	    n_qubits = 5,
+	    n_ancilla = 3,
 	    T = T,
 	    forward_ensemble_size = 1000,
-	    n_layers = 6,
+	    n_layers = 16,
 	    backward_ensemble_size = 100,
 	    rng = MersenneTwister(124),
 	)
 
-	old_weights, target_ensemble = load_weights("saves/2026-04-17_131904_226_AMSGrad/weights.jld2")
-	model.forward_ensembles[:, 0] = target_ensemble
-	# initialize_forward_ensemble!(model, clustered)
+	# old_weights, target_ensemble = load_weights("saves/2026-04-17_131904_226_AMSGrad/weights.jld2")
+	# model.forward_ensembles[:, 0] = target_ensemble
+	initialize_forward_ensemble!(model, clustered)
 	# initialize_forward_ensemble!(model, qkrlocalized)
 	# scramble!(model; weight_schedule=logrange(0.8, 2.4; length=T))
 	# scramble!(model; weight_schedule=logrange(0.4, 1.3; length=T))
-	# scramble!(model; weight_schedule=range(0.4, 1.2; length=T))
+	scramble!(model; weight_schedule=range(0.5, 2; length=T))
 
 	training_strategy = GradZygote(
 		loss_function = wasserstein_distance,
-		optimizer = Optimisers.AMSGrad(0.005),
+		optimizer = Optimisers.AMSGrad(0.01),
 		iter_schedule = fill(500, T),
-		# iter_schedule = [800, 800, 600, 600, 600, 600, 600],
+		# iter_schedule = [400, 400, 500, 500, 400],
 	)
 	# training_strategy = GradEnzyme(
 	# 	loss_function = wasserstein_distance,
@@ -70,21 +73,21 @@ begin
 	# training_strategy = DirectGradZygote(
 	# 	loss_function = wasserstein_distance,
 	# 	optimizer = Optimisers.AMSGrad(0.01),
-	# 	n_iters = 300
+	# 	n_iters = 600
 	# )
 	# training_strategy = QNSPSA(;
 	# 	loss_function = wasserstein_distance,
-	# 	iter_schedule = fill(1500, T),
+	# 	iter_schedule = fill(1000, T),
 	# 	# iter_schedule = [1500, 1500, 1, 1, 1, 1],
 	# 	# hyper_params = (η=2*1e-3, ϵ=5e-2, β=1e-2, history_length=3), # good
-	# 	hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5), # good (nq=2)
-	# 	# hyper_params = (η=7e-2, ϵ=5e-2, β=1e-2, history_length=3),
+	# 	# hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5), # good (nq=2)
+	# 	hyper_params = (η=3e-2, ϵ=5e-2, β=1e-1, history_length=5),
 	# )
 	# training_strategy = DirectQNSPSA(
 	# 	loss_function = wasserstein_distance,
-	# 	n_iters = 2000,
-	# 	hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5),
-	# 	hyper_params = (η=7e-2, ϵ=5e-2, β=1e-1, history_length=5),
+	# 	n_iters = 2500,
+	# 	# hyper_params = (η=1e-2, ϵ=5e-2, β=1e-2, history_length=5),
+	# 	hyper_params = (η=3e-2, ϵ=5e-2, β=1e-1, history_length=5),
 	# )
 	# training_strategy = Rotosolve(
 	# 	model;
@@ -108,8 +111,8 @@ begin
 	# 	optimizer = Optimisers.Adam(0.005),
 	# 	iter_schedule = intrange(1, 2; length=T)
 	# )
-	initial_state = generate_backward_pass(model, training_strategy, old_weights)
-	train!(model, training_strategy; initial_reg = initial_state)
+	# initial_state = generate_backward_pass(model, training_strategy, old_weights)
+	train!(model, training_strategy)
 end;
 
 # ╔═╡ 8b6da20a-af37-4d95-a099-4537823607a9
@@ -119,16 +122,18 @@ plot_qkr_localization(model, model.forward_ensembles[:, 0] |> OffsetArrays.no_of
   ╠═╡ =#
 
 # ╔═╡ 013ab426-5d6d-4d38-b34a-ae8ecc8458dc
-# ╠═╡ disabled = true
-#=╠═╡
-plot_forward_fidelity_decay(model)
-  ╠═╡ =#
+ffd = plot_forward_fidelity_decay(model)
+
+# ╔═╡ 8cba3e96-d609-4472-bbe1-cd16ea7ad062
+if training_strategy.loss_history .|> sum |> sum != 0
+	CairoMakie.save("ffd_plot.png", ffd)
+end
 
 # ╔═╡ f0e96743-6d6e-4358-89b9-d05996986386
-model.forward_ensembles[:, 0] |> plot_bloch_sphere
+model.forward_ensembles[:, 10] |> plot_bloch_sphere
 
 # ╔═╡ af235e27-5c57-4183-82d8-dad18a44a8aa
-backward_ensembles = test(model, training_strategy; weights=old_weights);
+backward_ensembles = test(model, training_strategy);
 
 # ╔═╡ 1c809324-66c5-49a7-9c07-beb576347223
 backward_ensembles[1:100, 0] |> plot_bloch_sphere
@@ -139,7 +144,7 @@ bplh = plot_training_loss_history(model, training_strategy)
 
 # ╔═╡ 8f3e4157-cfa1-4e54-a281-09e90d328651
 if !all(isempty, training_strategy.loss_history)
-	record_run(model, training_strategy, bplh, "Original"; old_weights = old_weights)
+	record_run(model, training_strategy, bplh, "Original")
 end
 
 # ╔═╡ 38c35101-8806-4bf8-b5ca-e468f6012f1c
@@ -205,9 +210,11 @@ losses |> std
 # ╠═91c975f1-500d-4f56-8dc0-65075bc54974
 # ╠═5de59778-07cd-496b-84ec-4700db380ea6
 # ╠═3cc2773d-624a-40a1-8839-8e1efde82147
+# ╠═12418940-8359-4212-9457-c9916cd1f8c9
 # ╠═06399d96-599f-40ab-b2f7-f8f6955617ca
 # ╠═8b6da20a-af37-4d95-a099-4537823607a9
 # ╠═013ab426-5d6d-4d38-b34a-ae8ecc8458dc
+# ╠═8cba3e96-d609-4472-bbe1-cd16ea7ad062
 # ╠═f0e96743-6d6e-4358-89b9-d05996986386
 # ╠═af235e27-5c57-4183-82d8-dad18a44a8aa
 # ╠═1c809324-66c5-49a7-9c07-beb576347223
