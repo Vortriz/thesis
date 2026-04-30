@@ -67,17 +67,18 @@ def _(target_ensemble):
 
 @app.cell
 def _():
-    from jaxtyping import Array
+    from jax import Array
 
     return (Array,)
 
 
 @app.cell
 def _(Array, model):
-    dev = qml.device("lightning.qubit", wires=model.n_qubits)
+    dev = qml.device("default.qubit", wires=model.n_qubits)
 
-    @qml.qnode(dev, interface="jax", diff_method="finite-diff")
-    def _pqc_block(n_qubits, n_layers, params: Array, state: Array):
+    # @qml.qjit
+    @qml.qnode(dev, interface="jax")
+    def pqc_block(n_qubits, n_layers, params: Array, state: Array):
         wires = range(n_qubits)
         qml.StatePrep(state, wires=wires)
 
@@ -92,13 +93,10 @@ def _(Array, model):
 
         return qml.state()
 
-    # Use jax.vmap to handle batching of the input state
-    pqc_block = jax.vmap(_pqc_block, in_axes=(None, None, None, 0))
-
     @jax.jit
     def apply_pqc(key: Array, model: Model, params: Array, state: Array):
         ancilla = jnp.zeros(2**model.n_ancilla, dtype=jnp.complex128).at[0].set(1)
-        state_with_ancilla = jnp.kron(jax.lax.stop_gradient(state), ancilla)
+        state_with_ancilla = jnp.kron(state, ancilla)
 
         output_state = pqc_block(
             model.n_qubits, model.n_layers, params, state_with_ancilla
@@ -214,60 +212,6 @@ def _():
 
 
     pure_dm_to_state_vmap = jax.vmap(pure_dm_to_state, in_axes=0)
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
-def _():
-    # import pennylane as qml
-    # import jax
-    # import jax.numpy as jnp
-
-    _dev_lightning = qml.device("lightning.qubit", wires=1)
-
-    @qml.qnode(_dev_lightning, interface="jax", diff_method="finite-diff")
-    def _test_circuit_lightning(params):
-        qml.RX(params[0], wires=0)
-        return qml.state()
-
-    def _test_loss_lightning(params):
-        state = _test_circuit_lightning(params)
-        return jnp.real(state[0])
-
-    print("Testing lightning.qubit with finite-diff...")
-    try:
-        _grad_lightning = jax.grad(_test_loss_lightning)(jnp.array([0.5]))
-        print("Success:", _grad_lightning)
-    except Exception as e:
-        print("lightning.qubit Error:", type(e).__name__)
-        print(e)
-
-    print("\n------------------\n")
-
-    _dev_default = qml.device("default.qubit", wires=1)
-
-    @qml.qnode(_dev_default, interface="jax", diff_method="backprop")
-    def _test_circuit_default(params):
-        qml.RX(params[0], wires=0)
-        return qml.state()
-
-    def _test_loss_default(params):
-        state = _test_circuit_default(params)
-        return jnp.real(state[0])
-
-    print("Testing default.qubit with backprop...")
-    try:
-        _grad_default = jax.grad(_test_loss_default)(jnp.array([0.5]))
-        print("Success:", _grad_default)
-    except Exception as e:
-        print("default.qubit Error:", type(e).__name__)
-        print(e)
-
     return
 
 
