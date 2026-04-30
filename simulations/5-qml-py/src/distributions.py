@@ -44,29 +44,14 @@ def gen_dist(  # noqa: F811
     n_qubits: int,
     n_samples: int,
 ) -> Array:
-    """Generates Haar-random ensemble"""
+    """Generates Haar-random ensemble using normalized complex Gaussian vectors."""
     dims = 2**n_qubits
-
-    # Generate complex Gaussian matrices (Ginibre ensemble)
     k1, k2 = random.split(key)
-    z = (
-        random.normal(k1, (n_samples, dims, dims))
-        + 1j * random.normal(k2, (n_samples, dims, dims))
-    ) / jnp.sqrt(2.0)
 
-    # JAX's qr handles the leading 'n' dimension automatically
-    q, r = jnp.linalg.qr(z)
+    # A normalized complex Gaussian vector is Haar-random (statistically equivalent to first column of QR)
+    z = random.normal(k1, (n_samples, dims)) + 1j * random.normal(k2, (n_samples, dims))
 
-    diag_r = jnp.diagonal(r, axis1=-2, axis2=-1)
-
-    # Compute the phase: e^(i * theta) = r_ii / |r_ii|
-    phases = diag_r / jnp.abs(diag_r)
-
-    # Correct Q: multiply each column i by phase i
-    # (n, dim, dim) * (n, 1, dim) -> broadcasting takes care of columns
-    u = q * phases[:, jnp.newaxis, :]
-
-    return u[:, :, 0]
+    return z / jnp.linalg.norm(z, axis=1, keepdims=True)
 
 
 # @dispatch

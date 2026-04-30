@@ -34,3 +34,36 @@ def plot_bloch_sphere(ensemble: Array):
     sphere.render()
 
     return fig
+
+
+def plot_loss_training_vs_initial(loss_history, title):
+    """
+    Plots the loss history for each timestep sequentially.
+    """
+    if isinstance(loss_history, list):
+        loss_history = np.array(loss_history)
+
+    T, epochs = loss_history.shape
+    losses_flat = np.zeros(shape=T * epochs)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    for t, losses in enumerate(loss_history):
+        losses_flat[t * epochs : (t + 1) * epochs] = losses
+
+    ax.scatter(np.arange(T * epochs), losses_flat, s=1)
+    ax.hlines(
+        losses_flat[-1],
+        0,
+        1,
+        transform=ax.get_yaxis_transform(),
+        linestyle="--",
+        label=f"Final Loss = {losses_flat[-1]:.4f}",
+    )
+    ax.set_ylim(0, 1)
+
+    ax.set_xlabel("Total Epochs (T x epochs)")
+    ax.set_ylabel("Loss")
+    ax.set_title(f"{title}")
+    plt.legend()
+    return fig

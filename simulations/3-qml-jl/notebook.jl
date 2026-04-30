@@ -39,13 +39,13 @@ using JET, BenchmarkTools
 
 # ╔═╡ 06399d96-599f-40ab-b2f7-f8f6955617ca
 begin
-	const T = 6
+	const T = 5
 	model = Model(
-	    n_qubits = 5,
-	    n_ancilla = 3,
+	    n_qubits = 4,
+	    n_ancilla = 2,
 	    T = T,
 	    forward_ensemble_size = 1000,
-	    n_layers = 16,
+	    n_layers = 12,
 	    backward_ensemble_size = 100,
 	    rng = MersenneTwister(124),
 	)

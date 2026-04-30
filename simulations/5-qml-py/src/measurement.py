@@ -47,7 +47,7 @@ def measure_stochastic(
     ]  # shape: (batch_size, 2**n_data)
 
     # Differentiable normalization
-    norms = jnp.sqrt(jnp.sum(jnp.abs(gen_sampled) ** 2, axis=-1, keepdims=True))
+    norms = jnp.linalg.norm(gen_sampled, axis=-1, keepdims=True)
 
     # Return normalized pure state
     return gen_sampled / (norms + 1e-12)

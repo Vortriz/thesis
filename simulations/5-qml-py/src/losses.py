@@ -1,6 +1,8 @@
+import jax
 import jax.numpy as jnp
 from jaxtyping import Array
 from jax import jit
+from functools import partial
 
 
 @jit
@@ -23,41 +25,73 @@ def mmd_distance(ensemble1: Array, ensemble2: Array):
     return 2 * r12 - r11 - r22
 
 
-def wasserstein_distance(ensemble1, ensemble2):
-    # [TODO]
-    return
+@partial(jit, static_argnames=("max_iter", "L"))
+def ipot(
+    C: Array,
+    beta: float = 0.01,
+    max_iter: int = 100,
+    L: int = 1,
+) -> Array:
+    """
+    Inexact Proximal Optimal Transport (IPOT) algorithm.
+    Optimized for JAX using `lax.scan` and inner loop unrolling.
+    """
+    n1, n2 = C.shape
+    a1 = jnp.ones(n1) / n1
+    a2 = jnp.ones(n2) / n2
+
+    K = jnp.exp(-C / beta)
+
+    def scan_body(carry, _):
+        P, u, v = carry
+        Q = K * P
+
+        # Unroll the inner L loop since it's static (typically 1)
+        # This allows JAX to heavily optimize the sequential updates
+        for _ in range(L):
+            # We use a very small epsilon (1e-200) to prevent division by zero,
+            # but small enough not to swallow values like exp(-100) ~ 1e-44
+            u = a1 / (jnp.dot(Q, v) + 1e-200)
+            v = a2 / (jnp.dot(Q.T, u) + 1e-200)
+
+        # Broadcasting is highly optimized in XLA
+        P = u[:, None] * Q * v[None, :]
+        return (P, u, v), None
+
+    P_init = jnp.ones((n1, n2)) / (n1 * n2)
+    u_init = jnp.ones(n1)
+    v_init = jnp.ones(n2)
+
+    (P_final, _, _), _ = jax.lax.scan(scan_body, (P_init, u_init, v_init), None, length=max_iter)
+    
+    return P_final
 
 
-# def measure_ancilla(states, n_qubits, n_ancilla, rng_key):
-#     """
-#     Simulates measurement of ancilla qubits and state collapse.
-#     Assumes ancilla are the 'trailing' qubits.
-#     """
-#     # Reshape to (batch_size, 2**n_ancilla, 2**n_qubits)
-#     reshaped = states.reshape(states.shape[0], 2**n_ancilla, 2**n_qubits)
+@partial(jit, static_argnames=("max_iter", "L", "return_map"))
+def wasserstein_distance(
+    ensemble1: Array,
+    ensemble2: Array,
+    beta: float = 0.01,
+    max_iter: int = 1000,
+    L: int = 1,
+    return_map: bool = False,
+):
+    """
+    Calculates the Wasserstein distance between two ensembles of quantum states using IPOT.
+    The cost matrix is the inter-trace distance: C_ij = 1 - |<psi_i | phi_j>|^2.
+    """
+    # Cost matrix calculation (highly vectorized matrix multiplication)
+    C = 1.0 - jnp.abs(jnp.matmul(ensemble1, ensemble2.conj().T)) ** 2
 
-#     # Calculate probabilities of each ancilla measurement outcome
-#     probs = jnp.sum(jnp.abs(reshaped) ** 2, axis=2)  # (batch_size, 2**n_ancilla)
+    P = ipot(C, beta=beta, max_iter=max_iter, L=L)
 
-#     # Sample outcomes
-#     outcomes = jax.random.categorical(rng_key, jnp.log(probs + 1e-15), axis=1)
+    if return_map:
+        return P
 
-#     # Extract the collapsed state for each sample
-#     def get_collapsed(s, outcome):
-#         return reshaped[s, outcome] / jnp.linalg.norm(reshaped[s, outcome])
+    # By the envelope theorem, the gradient of the OT loss with respect to C
+    # is exactly the optimal transport plan P. Stopping gradients through P 
+    # avoids backpropagating through the `max_iter` steps of the IPOT solver, 
+    # dramatically speeding up training without altering the correct gradients.
+    P = jax.lax.stop_gradient(P)
 
-#     collapsed_states = jax.vmap(get_collapsed)(jnp.arange(states.shape[0]), outcomes)
-
-#     return collapsed_states
-
-
-# def attach_ancilla(states, n_ancilla):
-#     """Prepends/Appends ancilla in |0> state."""
-#     batch_size = states.shape[0]
-#     dim_main = states.shape[1]
-#     dim_total = dim_main * (2**n_ancilla)
-
-#     # Create |psi> \otimes |00...0>
-#     # This is equivalent to padding with zeros in the state vector representation
-#     padding = jnp.zeros((batch_size, dim_total - dim_main), dtype=jnp.complex128)
-#     return jnp.concatenate([states, padding], axis=1)
+    return jnp.sum(P * C)

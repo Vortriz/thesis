@@ -17,9 +17,9 @@ with app.setup:
     #     hardware_efficient_ansatz,
     # )
     from src.distributions import DistributionType, gen_dist
-    from src.losses import mmd_distance
+    from src.losses import mmd_distance, wasserstein_distance
     from src.measurement import measure_stochastic
-    from src.plotting import plot_bloch_sphere
+    from src.plotting import plot_bloch_sphere, plot_loss_training_vs_initial
     from src.types import Model
 
     progress = mo.status.progress_bar
@@ -35,9 +35,9 @@ def _():
     T = 5
     rngs = nnx.Rngs(12)
     model = Model(
-        n_data=1,
-        n_ancilla=1,
-        n_layers=4,
+        n_data=4,
+        n_ancilla=2,
+        n_layers=12,
         dataset_size=1000,
         batch_size=100,
         target_schedule=jnp.arange(T),
@@ -78,13 +78,15 @@ def _(Array, model):
 
     # @qml.qjit
     @qml.qnode(dev, interface="jax")
-    def pqc_block(n_qubits, n_layers, params: Array, state: Array):
-        wires = range(n_qubits)
-        qml.StatePrep(state, wires=wires)
+    def pqc_block(n_data, n_layers, params: Array, state: Array):
+        # Only prepare the data qubits. 
+        # Ancilla qubits (n_data to n_qubits-1) stay in |0> by default.
+        qml.StatePrep(state, wires=range(n_data))
 
-        entangle_pairs = [(i, (i + 1) % n_qubits) for i in range(n_qubits - (n_qubits == 2))]
+        wires = range(model.n_qubits)
+        entangle_pairs = [(i, (i + 1) % model.n_qubits) for i in range(model.n_qubits - (model.n_qubits == 2))]
         for layer in range(n_layers):
-            for i in range(n_qubits):
+            for i in wires:
                 qml.RX(params[layer, i, 0], wires=wires[i])
                 qml.RY(params[layer, i, 1], wires=wires[i])
 
@@ -95,11 +97,9 @@ def _(Array, model):
 
     @jax.jit
     def apply_pqc(key: Array, model: Model, params: Array, state: Array):
-        ancilla = jnp.zeros(2**model.n_ancilla, dtype=jnp.complex128).at[0].set(1)
-        state_with_ancilla = jnp.kron(state, ancilla)
-
+        # We pass the small data state directly to the QNode
         output_state = pqc_block(
-            model.n_qubits, model.n_layers, params, state_with_ancilla
+            model.n_data, model.n_layers, params, state
         )
 
         return measure_stochastic(key, model, output_state)
@@ -114,8 +114,8 @@ def _(apply_pqc):
         params = model.params[t]
         output_batch = apply_pqc(key, model, params, input_batch)
 
-        # Compute the MMD distance between the PQC output and the target batch
-        loss = mmd_distance(output_batch, target_batch)
+        # Compute the Wasserstein distance between the PQC output and the target batch
+        loss = wasserstein_distance(output_batch, target_batch)
         return loss
 
     return (loss_fn,)
@@ -134,7 +134,7 @@ def _(T, apply_pqc, loss_fn, model, rngs, target_ensemble):
     )
 
     for t in progress(range(T)):
-        optimizer = nnx.Optimizer(model, optax.adam(learning_rate=0.005), wrt=nnx.Param)
+        optimizer = nnx.Optimizer(model, optax.adam(learning_rate=0.01), wrt=nnx.Param)
         epochs = model.epoch_schedule[t].item()
         losses = jnp.zeros(epochs)
 
@@ -162,6 +162,12 @@ def _(T, apply_pqc, loss_fn, model, rngs, target_ensemble):
             rngs.params(), model, model.params[t], current_ensemble
         )
     return (loss_history,)
+
+
+@app.cell
+def _(loss_history):
+    plot_loss_training_vs_initial(loss_history, title="Training Loss (Sequential Wasserstein)")
+    return
 
 
 @app.cell
@@ -213,6 +219,26 @@ def _():
 
     pure_dm_to_state_vmap = jax.vmap(pure_dm_to_state, in_axes=0)
     return
+
+
+@app.cell
+def _(haar, target_ensemble):
+    wasserstein_distance(
+        target_ensemble,
+        haar
+    )
+    return
+
+
+@app.cell
+def _(model, rngs):
+    haar = gen_dist(
+        DistributionType.HAAR,
+        rngs.params(),
+        model.n_data,
+        model.dataset_size,
+    )
+    return (haar,)
 
 
 @app.cell
