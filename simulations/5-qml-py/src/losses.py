@@ -1,9 +1,9 @@
-import jax
 import jax.numpy as jnp
-
 from jaxtyping import Array
+from jax import jit
 
 
+@jit
 def mmd_distance(ensemble1: Array, ensemble2: Array):
     """
     Calculates the MMD distance between two ensembles of quantum states.

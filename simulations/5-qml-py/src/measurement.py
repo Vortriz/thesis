@@ -1,10 +1,14 @@
 import jax
 import jax.numpy as jnp
 from jaxtyping import Array, PRNGKeyArray
+from src.types import Model
+from flax import nnx
+from jax import jit
 
 
+@jit
 def measure_stochastic(
-    rng_key: PRNGKeyArray, state: Array, n_data: int, n_ancilla: int
+    key: PRNGKeyArray, model: Model, state: Array
 ) -> Array:
     """
     Simulates a stochastic measurement of the ancilla qubits and returns
@@ -14,10 +18,9 @@ def measure_stochastic(
     Ancilla qubits are assumed to be the last `n_ancilla` wires.
 
     Args:
+        key: JAX PRNG Key
+        model: Model object
         state: State vector of shape (batch_size, 2**(n_data + n_ancilla))
-        rng_key: JAX PRNG key
-        n_data: Number of data qubits
-        n_ancilla: Number of ancilla qubits
 
     Returns:
         normalized_state: Normalized pure state vector of shape (batch_size, 2**n_data)
@@ -25,7 +28,7 @@ def measure_stochastic(
     batch_size = state.shape[0]
 
     # Reshape state to (batch_size, 2**n_data, 2**n_ancilla)
-    state_reshaped = state.reshape((batch_size, 2**n_data, 2**n_ancilla))
+    state_reshaped = state.reshape((batch_size, 2**model.n_data, 2**model.n_ancilla))
 
     # Calculate probabilities for each ancilla outcome (summing over data dimensions)
     probs = jnp.sum(
@@ -34,7 +37,7 @@ def measure_stochastic(
 
     # Sample outcomes (detach from AD to treat as constants)
     sampled_indices = jax.lax.stop_gradient(
-        jax.random.categorical(rng_key, jnp.log(probs + 1e-12))
+        jax.random.categorical(key, jnp.log(probs + 1e-12))
     )
 
     # Differentiable slice: select the collapsed state for each item in the batch

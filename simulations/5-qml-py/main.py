@@ -1,6 +1,5 @@
-import numpy as np
 import jax
-import jax.numpy as jnp
+import numpy as np
 from src.types import Model
 
 jax.config.update("jax_enable_x64", True)

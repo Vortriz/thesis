@@ -12,6 +12,7 @@ class DistributionType(Enum):
     HAAR = "haar"
     QKR = "qkr"
 
+# [TODO] use nnx.Rngs
 
 @dispatch
 def gen_dist(
@@ -21,14 +22,14 @@ def gen_dist(
     n_samples: int,
     scale: float = 0.05,
 ) -> Array:
-    """Generates states clustered around a random base state."""
+    """Generates enemble of states clustered around a random base state."""
     basis_size = 2**n_qubits
-    k1, k2, k3 = random.split(key, 3)
-    base_state = random.uniform(k1, (1, basis_size))
+    k1, k2 = random.split(key)
+    base_state = random.normal(k1, (1, basis_size), dtype=jnp.complex128)
 
-    states = jnp.repeat(base_state, n_samples, axis=0) + scale * (
-        random.normal(k2, (n_samples, basis_size))
-        + 1j * random.normal(k3, (n_samples, basis_size))
+    states = (
+        jnp.repeat(base_state, n_samples, axis=0)
+        + scale * random.normal(k2, (n_samples, basis_size), dtype=jnp.complex128)
     )
 
     states /= jnp.linalg.norm(states, axis=1, keepdims=True)
@@ -43,14 +44,14 @@ def gen_dist(  # noqa: F811
     n_qubits: int,
     n_samples: int,
 ) -> Array:
-    """Generates Haar-random states"""
+    """Generates Haar-random ensemble"""
     dims = 2**n_qubits
 
     # Generate complex Gaussian matrices (Ginibre ensemble)
     k1, k2 = random.split(key)
     z = (
         random.normal(k1, (n_samples, dims, dims))
-         + 1j * random.normal(k2, (n_samples, dims, dims))
+        + 1j * random.normal(k2, (n_samples, dims, dims))
     ) / jnp.sqrt(2.0)
 
     # JAX's qr handles the leading 'n' dimension automatically
