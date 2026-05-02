@@ -27,7 +27,7 @@ function denoise(model::Model, strategy::TrainingStrategy, input_reg::ConcreteAr
 end
 
 function initialize_backward_ensemble(model::Model)
-    ensemble = Vector{ArrayReg}(undef, (model.backward_ensemble_size))
+    ensemble = Vector{ArrayReg}(undef, (model.batch_size))
     for i in eachindex(ensemble)
         ensemble[i] =
             arrayreg(rand_unitary(2^model.n_qubits, Val(:haar))[1, :])
@@ -36,10 +36,10 @@ function initialize_backward_ensemble(model::Model)
 end
 
 function test(model::Model, strategy::TrainingStrategy; weights::Union{Nothing, Matrix{Float64}} = nothing)
-    eval_weights = isnothing(weights) ? model.trained_params : weights
+    eval_weights = isnothing(weights) ? model.params : weights
     T_eval = size(eval_weights, 2)
 
-    backward_states = OffsetArrays.Origin(1, 0)(fill(zero_state(model.n_qubits), (model.backward_ensemble_size, T_eval + 1)))
+    backward_states = OffsetArrays.Origin(1, 0)(fill(zero_state(model.n_qubits), (model.batch_size, T_eval + 1)))
     backward_states[:, T_eval] = initialize_backward_ensemble(model)
 
     for t in range(T_eval, 1; step = -1)

@@ -44,16 +44,16 @@ begin
 	    n_qubits = 4,
 	    n_ancilla = 2,
 	    T = T,
-	    forward_ensemble_size = 1000,
+	    dataset_size = 1000,
 	    n_layers = 12,
-	    backward_ensemble_size = 100,
+	    batch_size = 100,
 	    rng = MersenneTwister(124),
 	)
 
 	# old_weights, target_ensemble = load_weights("saves/2026-04-17_131904_226_AMSGrad/weights.jld2")
 	# model.forward_ensembles[:, 0] = target_ensemble
-	initialize_forward_ensemble!(model, clustered)
-	# initialize_forward_ensemble!(model, qkrlocalized)
+	gen_dist!(model, clustered)
+	# gen_dist!(model, qkrlocalized)
 	# scramble!(model; weight_schedule=logrange(0.8, 2.4; length=T))
 	# scramble!(model; weight_schedule=logrange(0.4, 1.3; length=T))
 	scramble!(model; weight_schedule=range(0.5, 2; length=T))
@@ -180,8 +180,8 @@ begin
 	losses = []
 	for _ in 1:50
 		indices = StatsBase.sample(
-			1:model.forward_ensemble_size,
-			model.backward_ensemble_size,
+			1:model.dataset_size,
+			model.batch_size,
 			replace = false,
 		)
 

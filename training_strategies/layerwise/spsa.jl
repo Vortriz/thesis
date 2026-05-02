@@ -1,7 +1,7 @@
 export SPSA
 
 # SPSA
-struct SPSA <: StepwiseStrategy
+struct SPSA <: SequentialStrategy
     loss_function::Function
     iter_schedule::Vector{Int}
     hyper_params::NamedTuple
@@ -43,8 +43,8 @@ function train_step!(model::Model, strategy::SPSA, t::Int, current_reg::Concrete
 
     @progress for k in 1:strategy.iter_schedule[t]
         indices = sample(
-            1:model.forward_ensemble_size,
-            model.backward_ensemble_size,
+            1:model.dataset_size,
+            model.batch_size,
             replace = false,
         )
         target_ensemble::Ensemble = model.forward_ensembles[indices, t-1]
@@ -58,8 +58,8 @@ function train_step!(model::Model, strategy::SPSA, t::Int, current_reg::Concrete
 
         # Log loss
         indices_test = sample(
-            1:model.forward_ensemble_size,
-            model.backward_ensemble_size,
+            1:model.dataset_size,
+            model.batch_size,
             replace = false,
         )
         target_ensemble_test::Ensemble = model.forward_ensembles[indices_test, t-1]
@@ -72,5 +72,5 @@ function train_step!(model::Model, strategy::SPSA, t::Int, current_reg::Concrete
         strategy.loss_history[t][k] = loss
     end
 
-    model.trained_params[:, t] = params
+    model.params[:, t] = params
 end

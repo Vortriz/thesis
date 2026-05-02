@@ -42,13 +42,13 @@ println("Number of workers: $(nprocs())")
         n_qubits=6,
         n_ancilla=3,
         T=T,
-        forward_ensemble_size=1000,
+        dataset_size=1000,
         n_layers=18,
-        backward_ensemble_size=100,
+        batch_size=100,
         rng=MersenneTwister(124),
     )
 
-    initialize_forward_ensemble!(model; spread=0.05)
+    gen_dist!(model; spread=0.05)
     # scramble!(model; weight_schedule=logrange(0.8, 2.4; length=T))
     scramble!(model; weight_schedule=fill(1.0, T))
 

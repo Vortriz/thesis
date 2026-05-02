@@ -1,6 +1,6 @@
 export GradEnzyme
 
-struct GradEnzyme{F, O} <: StepwiseStrategy
+struct GradEnzyme{F, O} <: SequentialStrategy
     loss_function::F
     optimizer::O
     iter_schedule::Vector{Int}
@@ -211,8 +211,8 @@ function train_step!(model::Model, strategy::GradEnzyme, t::Int, autoregressive_
 
     @progress for k in 1:strategy.iter_schedule[t]
         indices = sample(
-            1:model.forward_ensemble_size,
-            model.backward_ensemble_size,
+            1:model.dataset_size,
+            model.batch_size,
             replace = false,
         )
         # Avoid slice allocation for OT by using view if possible,
@@ -274,5 +274,5 @@ function train_step!(model::Model, strategy::GradEnzyme, t::Int, autoregressive_
         strategy.loss_history[t][k] = 1.0 + surrogate_loss_val
     end
 
-    model.trained_params[:, t] = params
+    model.params[:, t] = params
 end

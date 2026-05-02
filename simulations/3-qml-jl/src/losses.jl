@@ -22,10 +22,11 @@ function mmd_distance(
     return mmd_distance(Matrix(ensemble1), Matrix(ensemble2))
 end
 
+# [TODO] either remove `return_map` or remove the `ipot` function
 # Wasserstein (IPOT)
 # Based on https://github.com/xieyujia/IPOT/blob/master/ipot.py
 function wasserstein_distance(
-	ensemble1::Union{Matrix{ComplexF64}, SubArray},
+	ensemble1::Matrix{ComplexF64},
 	ensemble2::Matrix{ComplexF64};
     beta::Float64 = 0.01,
     max_iter::Int = 1000,
@@ -77,7 +78,7 @@ end
 function ipot(
 	C::Matrix{Float64};
     beta::Float64 = 0.01,
-    max_iter::Int = 100, # Lower default for inner loops
+    max_iter::Int = 500,
     L::Int = 1,
 )::Matrix{Float64}
     N1, N2 = size(C)

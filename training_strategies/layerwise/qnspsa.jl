@@ -1,6 +1,6 @@
 export QNSPSA
 
-struct QNSPSA <: StepwiseStrategy
+struct QNSPSA <: SequentialStrategy
     loss_function::Function
     iter_schedule::Vector{Int}
     hyper_params::NamedTuple
@@ -102,7 +102,7 @@ function train_step!(model::Model, strategy::QNSPSA, t::Int, current_reg::Concre
 
     @progress for k in 1:strategy.iter_schedule[t]
         # 1. Estimate Gradient (Standard SPSA)
-        indices = sample(1:model.forward_ensemble_size, model.backward_ensemble_size, replace=false)
+        indices = sample(1:model.dataset_size, model.batch_size, replace=false)
         target_ensemble = model.forward_ensembles[indices, t-1]
         target_matrix = target_ensemble |> ensemble_to_matrix
 
@@ -152,7 +152,7 @@ function train_step!(model::Model, strategy::QNSPSA, t::Int, current_reg::Concre
         # Log loss (at current params)
         # We can reuse l_plus/l_minus estimate or recompute. Recomputing is safer/standard.
         # Use new random target batch for validation
-        indices_val = sample(1:model.forward_ensemble_size, model.backward_ensemble_size, replace=false)
+        indices_val = sample(1:model.dataset_size, model.batch_size, replace=false)
         target_val = model.forward_ensembles[indices_val, t-1] |> ensemble_to_matrix
 
         d_curr_task = Threads.@spawn denoise(model, strategy, current_reg, params)
@@ -179,5 +179,5 @@ function train_step!(model::Model, strategy::QNSPSA, t::Int, current_reg::Concre
         strategy.loss_history[t][k] = val_loss
     end
 
-    model.trained_params[:, t] = params
+    model.params[:, t] = params
 end

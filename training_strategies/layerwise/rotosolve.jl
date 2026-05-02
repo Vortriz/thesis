@@ -1,6 +1,6 @@
 export Rotosolve
 
-struct Rotosolve <: StepwiseStrategy
+struct Rotosolve <: SequentialStrategy
     loss_function::Function
     iter_schedule::Vector{Int}
     loss_history::Vector{Vector{Float64}}
@@ -11,7 +11,7 @@ struct Rotosolve <: StepwiseStrategy
     function Rotosolve(model; loss_function, iter_schedule)
         loss_history = iter_schedule .|> zeros
         # Pre-allocate buffer for target states
-        target_buffer = zeros(ComplexF64, (2^model.n_qubits, model.backward_ensemble_size))
+        target_buffer = zeros(ComplexF64, (2^model.n_qubits, model.batch_size))
         new(loss_function, iter_schedule, loss_history, target_buffer)
     end
 end
@@ -23,8 +23,8 @@ function train_step!(model::Model, strategy::Rotosolve, t::Int, current_reg::Con
         for pᵢ in eachindex(params)
             # Sample target batch once for this parameter update
             indices = sample(
-                1:model.forward_ensemble_size,
-                model.backward_ensemble_size,
+                1:model.dataset_size,
+                model.batch_size,
                 replace = false,
             )
             target_ensemble::Ensemble = model.forward_ensembles[indices, 0]
@@ -54,8 +54,8 @@ function train_step!(model::Model, strategy::Rotosolve, t::Int, current_reg::Con
 
         # Logging loss
         indices = sample(
-            1:model.forward_ensemble_size,
-            model.backward_ensemble_size,
+            1:model.dataset_size,
+            model.batch_size,
             replace = false,
         )
         target_ensemble = model.forward_ensembles[indices, t-1]
@@ -71,5 +71,5 @@ function train_step!(model::Model, strategy::Rotosolve, t::Int, current_reg::Con
         strategy.loss_history[t][iter] = loss
     end
 
-    model.trained_params[:, t] = params
+    model.params[:, t] = params
 end

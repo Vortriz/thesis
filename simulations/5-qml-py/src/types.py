@@ -1,3 +1,4 @@
+import jax
 from beartype import beartype as typechecker
 from flax import nnx
 from jaxtyping import Array, Int, jaxtyped
@@ -35,5 +36,5 @@ class Model(nnx.Module):
         self.epoch_schedule = epoch_schedule
 
         # Parameters: (T, n_layers, n_qubits, 2)
-        # Using rngs.normal for convenience as per user sample
-        self.params = nnx.Param(rngs.normal((self.T, n_layers, self.n_qubits, 2)))
+        # Using uniform initialization to match Julia's rand(Float64)
+        self.params = nnx.Param(jax.random.uniform(rngs.params(), (self.T, n_layers, self.n_qubits, 2)))

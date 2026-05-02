@@ -1,12 +1,12 @@
 export train!
 
-function train!(model::Model, strategy::StepwiseStrategy;
+function train!(model::Model, strategy::SequentialStrategy;
                 initial_reg::Union{Nothing, ConcreteBatchedArrayReg} = nothing)
     @info "Strategy: $(typeof(strategy)) (Autoregressive)"
 
     # Initialize current_reg
     current_reg::ConcreteBatchedArrayReg = if isnothing(initial_reg)
-         generate_rand_ensemble(model.n_qubits, model.backward_ensemble_size) |> ensemble_to_batch
+         generate_rand_ensemble(model.n_qubits, model.batch_size) |> ensemble_to_batch
     else
         initial_reg
     end
@@ -20,7 +20,7 @@ function train!(model::Model, strategy::StepwiseStrategy;
 
         # Update current_reg for next step (t-1)
         # denoise returns Matrix{ComplexF64}, we wrap it back to Reg
-        denoised_matrix = denoise(model, strategy, current_reg, model.trained_params[:, t])
+        denoised_matrix = denoise(model, strategy, current_reg, model.params[:, t])
         current_reg = ConcreteBatchedArrayReg(denoised_matrix, size(denoised_matrix, 2))
     end
 end

@@ -1,5 +1,10 @@
 export ensemble_to_matrix, ensemble_to_matrix!, ensemble_to_batch, matrix_to_ensemble, generate_rand_ensemble, initialize_backward_ensemble, intrange, record_run, save_weights, load_weights, generate_backward_pass
 
+# function normalize!(M::Matrix{ComplexF64})
+#     norms = sqrt.(sum(abs2, M; dims=1))
+#     M ./= norms
+# end
+
 function matrix_to_ensemble(matrix::Matrix{ComplexF64})::Ensemble
     ensemble_size = size(matrix, 2)
     ensemble = Ensemble(undef, ensemble_size)
@@ -11,22 +16,22 @@ end
 
 function save_weights(model::Model, path::String; old_weights::Union{Nothing, Matrix{Float64}} = nothing)
     weights_to_save = if isnothing(old_weights)
-        model.trained_params
+        model.params
     else
         # Concatenate: new weights (T_new) and then old weights (T_old)
-        hcat(model.trained_params, old_weights)
+        hcat(model.params, old_weights)
     end
 
     # Save both weights and the target ensemble (at t=0)
     target_ensemble = model.forward_ensembles[:, 0]
 
-    jldsave(path; trained_params = weights_to_save, target_ensemble = target_ensemble)
+    jldsave(path; params = weights_to_save, target_ensemble = target_ensemble)
     @info "Weights and target ensemble saved to $path (Total T = $(size(weights_to_save, 2)))"
 end
 
 function load_weights(path::String)
     file = jldopen(path, "r")
-    weights = file["trained_params"]
+    weights = file["params"]
     target_ensemble = file["target_ensemble"]
     close(file)
     @info "Weights and target loaded from $path (T = $(size(weights, 2)))"
@@ -36,9 +41,9 @@ end
 function generate_backward_pass(model::Model, strategy::TrainingStrategy, weights::Matrix{Float64})
     T_weights = size(weights, 2)
     @info "Running full backward pass over loaded weights (T=$T_weights to 1)"
-    
+
     current_reg::ConcreteBatchedArrayReg =
-        generate_rand_ensemble(model.n_qubits, model.backward_ensemble_size) |> ensemble_to_batch
+        generate_rand_ensemble(model.n_qubits, model.batch_size) |> ensemble_to_batch
 
     @progress for t in T_weights:-1:1
         denoised_matrix = denoise(model, strategy, current_reg, weights[:, t])

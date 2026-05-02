@@ -38,13 +38,13 @@ begin
 	    n_qubits = 1,
 	    n_ancilla = 1,
 	    T = T,
-	    forward_ensemble_size = 1000,
+	    dataset_size = 1000,
 	    n_layers = 6,
-	    backward_ensemble_size = 100,
+	    batch_size = 100,
 	    rng = MersenneTwister(124),
 	)
 
-	initialize_forward_ensemble!(model, clustered)
+	gen_dist!(model, clustered)
 	scramble!(model; weight_schedule=logrange(0.5, 2; length=T))
 end
 

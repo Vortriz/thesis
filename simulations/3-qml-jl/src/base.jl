@@ -20,13 +20,13 @@ using LaTeXStrings
 
 # Order is important
 include("types.jl")
-include("model.jl") # Model must be defined before utils.jl which uses it for type hints
 include("utils.jl")
-include("losses.jl") # Depends on utils.jl (Matrix(ensemble))
-include("forward.jl")
-include("training_strategies/direct/base.jl")
-include("training_strategies/layerwise/base.jl")
-include("evaluation.jl")
+include("circuits.jl")
+include("losses.jl")
+include("distributions.jl")
+# include("training_strategies/direct/base.jl")
+# include("training_strategies/layerwise/base.jl")
+# include("evaluation.jl")
 include("plotting.jl")
 
 end

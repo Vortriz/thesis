@@ -15,12 +15,12 @@ end
 function train!(model::Model, strategy::DirectGradZygote)
     @info "Strategy: $(typeof(strategy)) (Direct / Simultaneous Training)"
 
-    # The parameters are stored in `model.trained_params` which is of size (n_params_per_step, T).
-    params = rand(model.rng, Float64, size(model.trained_params))
+    # The parameters are stored in `model.params` which is of size (n_params_per_step, T).
+    params = rand(model.rng, Float64, size(model.params))
 
     opt_state = Optimisers.setup(strategy.optimizer, params)
 
-    n_batch = model.backward_ensemble_size
+    n_batch = model.batch_size
     d = 2^model.n_qubits
     a = 2^model.n_ancilla
 
@@ -33,14 +33,14 @@ function train!(model::Model, strategy::DirectGradZygote)
 
     @progress for k in 1:n_iters
         indices = sample(
-            1:model.forward_ensemble_size,
-            model.backward_ensemble_size,
+            1:model.dataset_size,
+            model.batch_size,
             replace = false,
         )
         target_matrix = view(full_target_matrix, :, indices)
 
         # Generate fresh initial states at t=T for each training iteration
-        initial_reg = generate_rand_ensemble(model.n_qubits, model.backward_ensemble_size) |> ensemble_to_batch
+        initial_reg = generate_rand_ensemble(model.n_qubits, model.batch_size) |> ensemble_to_batch
 
         surrogate_loss_val, grads = Zygote.withgradient(params) do p
             current_reg_state = initial_reg.state
@@ -87,5 +87,5 @@ function train!(model::Model, strategy::DirectGradZygote)
         strategy.loss_history[1][k] = 1.0 + surrogate_loss_val
     end
 
-    model.trained_params .= params
+    model.params .= params
 end

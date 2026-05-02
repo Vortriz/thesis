@@ -84,7 +84,7 @@ def _(Array, model):
         qml.StatePrep(state, wires=range(n_data))
 
         wires = range(model.n_qubits)
-        entangle_pairs = [(i, (i + 1) % model.n_qubits) for i in range(model.n_qubits - (model.n_qubits == 2))]
+        entangle_pairs = [(i, (i + 1)) for i in range(model.n_qubits - 1)]
         for layer in range(n_layers):
             for i in wires:
                 qml.RX(params[layer, i, 0], wires=wires[i])
@@ -115,7 +115,7 @@ def _(apply_pqc):
         output_batch = apply_pqc(key, model, params, input_batch)
 
         # Compute the Wasserstein distance between the PQC output and the target batch
-        loss = wasserstein_distance(output_batch, target_batch)
+        loss = wasserstein_distance(output_batch, target_batch, max_iter=500)
         return loss
 
     return (loss_fn,)
@@ -140,15 +140,10 @@ def _(T, apply_pqc, loss_fn, model, rngs, target_ensemble):
 
         for epoch in progress(range(epochs), remove_on_exit=True):
             current_key = rngs.params()
-            sample_key, pqc_key = random.split(current_key)
+            _, pqc_key = random.split(current_key)
 
-            batch_indices = random.choice(
-                sample_key, model.dataset_size, (model.batch_size,), replace=False
-            )
-            target_batch = target_ensemble[batch_indices]
-
-            # Pass 't' to the global loss_fn
-            loss, grads = nnx.value_and_grad(loss_fn)(model, t, pqc_key, current_ensemble, target_batch)
+            # Pass 't' and the FULL target_ensemble to the global loss_fn
+            loss, grads = nnx.value_and_grad(loss_fn)(model, t, pqc_key, current_ensemble, target_ensemble)
             losses = losses.at[epoch].set(loss)
 
             optimizer.update(model, grads)

@@ -1,6 +1,6 @@
 export GradZygote
 
-struct GradZygote{F, O} <: StepwiseStrategy
+struct GradZygote{F, O} <: SequentialStrategy
     loss_function::F
     optimizer::O
     iter_schedule::Vector{Int}
@@ -46,8 +46,8 @@ function train_step!(model::Model, strategy::GradZygote, t::Int, autoregressive_
         # Optimisers.adjust!(opt_state, current_lr)
 
         indices = sample(
-            1:model.forward_ensemble_size,
-            model.backward_ensemble_size,
+            1:model.dataset_size,
+            model.batch_size,
             replace = false,
         )
         # Use view for efficiency
@@ -98,5 +98,5 @@ function train_step!(model::Model, strategy::GradZygote, t::Int, autoregressive_
         strategy.loss_history[t][k] = 1.0 + surrogate_loss_val
     end
 
-    model.trained_params[:, t] = params
+    model.params[:, t] = params
 end

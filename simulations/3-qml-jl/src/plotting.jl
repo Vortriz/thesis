@@ -1,169 +1,170 @@
 export plot_bloch_sphere, plot_forward_fidelity_decay, plot_training_loss_history, plot_eval_loss_history, plot_qkr_localization
 
-function plot_bloch_sphere(ensemble::Union{OffsetEnsemble, Ensemble})
-    if ensemble[begin].state.size[1] != 2
-        return
-    end
+function plot_bloch_sphere(ensemble::BatchedArrayReg)
+	dims, n_samples = ensemble.state.size
+	if dims != 2
+   	    @info "Plotting on Bloch sphere is only available for 1 qubit system."
+		return
+	end
 
     b = Bloch()
-    points = reduce(
-        hcat,
-        ensemble .|>
-        state .|>
-        s ->
-            s[1] * basis(2, 0) + s[2] * basis(2, 1) |>
-            s -> [expect(sigmax(), s), expect(sigmay(), s), expect(sigmaz(), s)] |> real,
-    )
+	points = zeros(Float64, (3, n_samples))
+
+	for (i, s) in ensemble.state |> eachcol |> enumerate
+		s = s[1] * basis(2, 0) + s[2] * basis(2, 1)
+		points[:, i] = [expect(sigmax(), s), expect(sigmay(), s), expect(sigmaz(), s)] |> real
+	end
+
     add_points!(b, points)
 	b.point_size = [3]
     fig, _ = render(b)
 
     # To make the plot square and remove axes
-    ax = Axis(fig[1, 1], aspect=1)
-	hidedecorations!(ax)
-	hidespines!(ax)
-	colsize!(fig.layout, 1, Aspect(1, 1.0))
-	resize_to_layout!(fig)
+    # ax = Axis(fig[1, 1], aspect=1)
+	# hidedecorations!(ax)
+	# hidespines!(ax)
+	# colsize!(fig.layout, 1, Aspect(1, 1.0))
+	# resize_to_layout!(fig)
 
     return fig
 end
 
-function plot_forward_fidelity_decay(model::Model)
-	rand_ensemble = generate_rand_ensemble(model.n_qubits, model.forward_ensemble_size)
+# function plot_forward_fidelity_decay(model::Model)
+# 	rand_ensemble = generate_rand_ensemble(model.n_qubits, model.dataset_size)
 
-    for t in eachindex(model.forward_fidelity_decay)
-        model.forward_fidelity_decay[t] = mmd_distance(
-			model.forward_ensembles[:, t] |> OffsetArrays.no_offset_view,
-			rand_ensemble,
-		)
-    end
+#     for t in eachindex(model.forward_fidelity_decay)
+#         model.forward_fidelity_decay[t] = mmd_distance(
+# 			model.forward_ensembles[:, t] |> OffsetArrays.no_offset_view,
+# 			rand_ensemble,
+# 		)
+#     end
 
-    fig = Figure()
-    ax = Axis(
-		fig[1, 1],
-		# yscale = log10,
-		xlabel = L"t",
-		ylabel = "MMD Distance \n (wrt Random Ensemble)",
-		title = "Forward fidelity decay (MMD)"
-	)
-    ax.xgridvisible = false
-    ax.ygridvisible = false
-    ax.yticks = 0:0.2:1
-    ylims!(ax, 0, 1)
+#     fig = Figure()
+#     ax = Axis(
+# 		fig[1, 1],
+# 		# yscale = log10,
+# 		xlabel = L"t",
+# 		ylabel = "MMD Distance \n (wrt Random Ensemble)",
+# 		title = "Forward fidelity decay (MMD)"
+# 	)
+#     ax.xgridvisible = false
+#     ax.ygridvisible = false
+#     ax.yticks = 0:0.2:1
+#     ylims!(ax, 0, 1)
 
-    scatter!(ax, model.forward_fidelity_decay)
+#     scatter!(ax, model.forward_fidelity_decay)
 
-    return fig
-end
+#     return fig
+# end
 
-function plot_training_loss_history(model::Model, strategy::DirectStrategy)
-    fig = Figure()
-    ax = Axis(
-        fig[1, 1],
-        xlabel = "Iterations",
-        ylabel = "Loss",
-        title = "Direct training loss history ($(strategy.loss_function |> nameof))",
-    )
-    ax.yticks = 0:0.2:1
+# function plot_training_loss_history(model::Model, strategy::DirectStrategy)
+#     fig = Figure()
+#     ax = Axis(
+#         fig[1, 1],
+#         xlabel = "Iterations",
+#         ylabel = "Loss",
+#         title = "Direct training loss history ($(strategy.loss_function |> nameof))",
+#     )
+#     ax.yticks = 0:0.2:1
 
-    lines!(
-        ax,
-        1:strategy.iter_schedule[1],
-        strategy.loss_history[1]
-    )
-    ylims!(ax, 0, 1)
+#     lines!(
+#         ax,
+#         1:strategy.iter_schedule[1],
+#         strategy.loss_history[1]
+#     )
+#     ylims!(ax, 0, 1)
 
-    return fig
-end
+#     return fig
+# end
 
-function plot_training_loss_history(model::Model, strategy::StepwiseStrategy)
-    fig = Figure()
-    ax = Axis(
-        fig[1, 1],
-        yscale = log10,
-        xlabel = "Iterations",
-        ylabel = "Loss",
-        title = "Backward process loss history ($(strategy.loss_function |> nameof))",
-    )
-    ax.yticks = 0:0.2:1
+# function plot_training_loss_history(model::Model, strategy::SequentialStrategy)
+#     fig = Figure()
+#     ax = Axis(
+#         fig[1, 1],
+#         yscale = log10,
+#         xlabel = "Iterations",
+#         ylabel = "Loss",
+#         title = "Backward process loss history ($(strategy.loss_function |> nameof))",
+#     )
+#     ax.yticks = 0:0.2:1
 
-    # Slice to 1:model.T to gracefully handle when the user provides an iter_schedule longer than T
-    actual_loss_history = strategy.loss_history[1:model.T]
-    actual_iter_schedule = strategy.iter_schedule[1:model.T]
+#     # Slice to 1:model.T to gracefully handle when the user provides an iter_schedule longer than T
+#     actual_loss_history = strategy.loss_history[1:model.T]
+#     actual_iter_schedule = strategy.iter_schedule[1:model.T]
 
-	loss_hist = actual_loss_history |> reverse
-	x = actual_iter_schedule |> reverse |> cumsum
-	pushfirst!(x, 0)
+# 	loss_hist = actual_loss_history |> reverse
+# 	x = actual_iter_schedule |> reverse |> cumsum
+# 	pushfirst!(x, 0)
 
-    for t in 1:model.T
-		lines!(
-			ax,
-			(x[t]+1):x[t+1],
-			loss_hist[t]
-		)
-    end
-    ylims!(ax, 0.001, 1)
+#     for t in 1:model.T
+# 		lines!(
+# 			ax,
+# 			(x[t]+1):x[t+1],
+# 			loss_hist[t]
+# 		)
+#     end
+#     ylims!(ax, 0.001, 1)
 
-    return fig
-end
+#     return fig
+# end
 
-function plot_eval_loss_history(
-    model::Model,
-    strategy::TrainingStrategy,
-    backward_states::OffsetEnsembleCollection
-)
-    fig = Figure()
-    ax = Axis(
-        fig[1, 1],
-        # yscale = log10
-        xlabel = "t",
-        ylabel = "Loss",
-        title = "Eval Loss History ($(strategy.loss_function |> nameof))",
-    )
-    ax.xticks = 0:model.T
-    ax.yticks = 0:0.2:1
+# function plot_eval_loss_history(
+#     model::Model,
+#     strategy::TrainingStrategy,
+#     backward_states::OffsetEnsembleCollection
+# )
+#     fig = Figure()
+#     ax = Axis(
+#         fig[1, 1],
+#         # yscale = log10
+#         xlabel = "t",
+#         ylabel = "Loss",
+#         title = "Eval Loss History ($(strategy.loss_function |> nameof))",
+#     )
+#     ax.xticks = 0:model.T
+#     ax.yticks = 0:0.2:1
 
-    distances = Vector{Float64}()
+#     distances = Vector{Float64}()
 
-    for ensemble in backward_states |> OffsetArrays.no_offset_view |> eachcol
-        push!(
-            distances,
-            strategy.loss_function(
-                ensemble |> Ensemble,
-                model.forward_ensembles[1:100, 0] |> Ensemble,
-            ),
-        )
-    end
+#     for ensemble in backward_states |> OffsetArrays.no_offset_view |> eachcol
+#         push!(
+#             distances,
+#             strategy.loss_function(
+#                 ensemble |> Ensemble,
+#                 model.forward_ensembles[1:100, 0] |> Ensemble,
+#             ),
+#         )
+#     end
 
-    reverse!(distances)
+#     reverse!(distances)
 
-    scatter!(ax, (0:model.T), distances)
-    ylims!(ax, 0, 1)
+#     scatter!(ax, (0:model.T), distances)
+#     ylims!(ax, 0, 1)
 
-    @show distances
+#     @show distances
 
-    return fig
-end
+#     return fig
+# end
 
-function plot_qkr_localization(model::Model, states::Ensemble)
-    n = length(states)
-    dims = 2^model.n_qubits
-    m_vec = [0:dims/2-1; -dims/2:-1]
-	avg_amplitudes = zeros(dims)
-	for ϕ in states |> ensemble_to_matrix |> eachcol
-		amplitudes = abs2.(ϕ)
-		_, idx = findmax(amplitudes)
-		circshift!(amplitudes, n-idx+1)
-		avg_amplitudes += amplitudes
-	end
-	avg_amplitudes /= n
-	fig = Figure()
-	ax = Axis(fig[1, 1], title="Localization of states", xlabel="m", ylabel="|ψ(p)|²)", yscale=log10)
-	scatter!(
-	    ax,
-		m_vec, avg_amplitudes,
-		markersize=3,
-		label=:none,
-	)
-	return fig
-end
+# function plot_qkr_localization(model::Model, states::Ensemble)
+#     n = length(states)
+#     dims = 2^model.n_qubits
+#     m_vec = [0:dims/2-1; -dims/2:-1]
+# 	avg_amplitudes = zeros(dims)
+# 	for ϕ in states |> ensemble_to_matrix |> eachcol
+# 		amplitudes = abs2.(ϕ)
+# 		_, idx = findmax(amplitudes)
+# 		circshift!(amplitudes, n-idx+1)
+# 		avg_amplitudes += amplitudes
+# 	end
+# 	avg_amplitudes /= n
+# 	fig = Figure()
+# 	ax = Axis(fig[1, 1], title="Localization of states", xlabel="m", ylabel="|ψ(p)|²)", yscale=log10)
+# 	scatter!(
+# 	    ax,
+# 		m_vec, avg_amplitudes,
+# 		markersize=3,
+# 		label=:none,
+# 	)
+# 	return fig
+# end

@@ -97,7 +97,7 @@ end
 function train!(model::Model, strategy::DirectQNSPSA)
     @info "Strategy: $(typeof(strategy)) (Direct / Simultaneous Training with QNSPSA)"
 
-    params = rand(model.rng, Float64, size(model.trained_params))
+    params = rand(model.rng, Float64, size(model.params))
     N = length(params)
 
     metric_tensor = Matrix{Float64}(I, N, N)
@@ -108,10 +108,10 @@ function train!(model::Model, strategy::DirectQNSPSA)
 
     @progress for k in 1:n_iters
         # 1. Estimate Gradient
-        indices = sample(1:model.forward_ensemble_size, model.backward_ensemble_size, replace=false)
+        indices = sample(1:model.dataset_size, model.batch_size, replace=false)
         target_matrix = view(full_target_matrix, :, indices)
 
-        initial_reg = generate_rand_ensemble(model.n_qubits, model.backward_ensemble_size) |> ensemble_to_batch
+        initial_reg = generate_rand_ensemble(model.n_qubits, model.batch_size) |> ensemble_to_batch
 
         Δ_vec = rand([-1.0, 1.0], N)
         Δ = reshape(Δ_vec, size(params))
@@ -148,7 +148,7 @@ function train!(model::Model, strategy::DirectQNSPSA)
         params_next = params - update_step
 
         # Log loss
-        indices_val = sample(1:model.forward_ensemble_size, model.backward_ensemble_size, replace=false)
+        indices_val = sample(1:model.dataset_size, model.batch_size, replace=false)
         target_val = view(full_target_matrix, :, indices_val)
 
         d_curr_task = Threads.@spawn run_direct_process(model, params, initial_reg)
@@ -176,5 +176,5 @@ function train!(model::Model, strategy::DirectQNSPSA)
         strategy.loss_history[1][k] = val_loss
     end
 
-    model.trained_params .= params
+    model.params .= params
 end
