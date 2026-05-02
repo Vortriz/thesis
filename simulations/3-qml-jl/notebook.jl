@@ -39,13 +39,13 @@ using JET, BenchmarkTools
 
 # ╔═╡ 06399d96-599f-40ab-b2f7-f8f6955617ca
 begin
-	const T = 5
+	const T = 4
 	model = Model(
-	    n_qubits = 4,
-	    n_ancilla = 2,
+	    n_qubits = 1,
+	    n_ancilla = 1,
 	    T = T,
 	    dataset_size = 1000,
-	    n_layers = 12,
+	    n_layers = 4,
 	    batch_size = 100,
 	    rng = MersenneTwister(124),
 	)
@@ -60,8 +60,8 @@ begin
 
 	training_strategy = GradZygote(
 		loss_function = wasserstein_distance,
-		optimizer = Optimisers.AMSGrad(0.01),
-		iter_schedule = fill(500, T),
+		optimizer = Optimisers.AMSGrad(0.005),
+		iter_schedule = fill(400, T),
 		# iter_schedule = [400, 400, 500, 500, 400],
 	)
 	# training_strategy = GradEnzyme(
