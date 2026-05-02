@@ -1,4 +1,4 @@
-export plot_bloch_sphere, plot_forward_fidelity_decay, plot_training_loss_history, plot_eval_loss_history, plot_qkr_localization
+export plot_bloch_sphere, plot_loss_history
 
 function plot_bloch_sphere(ensemble::BatchedArrayReg)
 	dims, n_samples = ensemble.state.size
@@ -27,6 +27,33 @@ function plot_bloch_sphere(ensemble::BatchedArrayReg)
 	# resize_to_layout!(fig)
 
     return fig
+end
+
+function plot_loss_history(loss_history::Vector{Vector{Float64}}, title::String)
+    fig = Figure()
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Iterations",
+        ylabel = "Loss",
+        title = title,
+    )
+    ax.yticks = 0:0.2:1
+
+    iter_schedule = length.(loss_history)
+    x = cumsum(iter_schedule)
+    pushfirst!(x, 0)
+
+    for t in 1:length(loss_history)
+        lines!(
+            ax,
+            (x[t]+1):x[t+1],
+            loss_history[t]
+        )
+    end
+    ylims!(ax, 0, 1)
+
+    return fig
+
 end
 
 # function plot_forward_fidelity_decay(model::Model)
@@ -77,36 +104,36 @@ end
 #     return fig
 # end
 
-# function plot_training_loss_history(model::Model, strategy::SequentialStrategy)
-#     fig = Figure()
-#     ax = Axis(
-#         fig[1, 1],
-#         yscale = log10,
-#         xlabel = "Iterations",
-#         ylabel = "Loss",
-#         title = "Backward process loss history ($(strategy.loss_function |> nameof))",
-#     )
-#     ax.yticks = 0:0.2:1
+function plot_training_loss_history(model::Model, strategy::SequentialStrategy)
+    fig = Figure()
+    ax = Axis(
+        fig[1, 1],
+        yscale = log10,
+        xlabel = "Iterations",
+        ylabel = "Loss",
+        title = "Backward process loss history ($(strategy.loss_function |> nameof))",
+    )
+    ax.yticks = 0:0.2:1
 
-#     # Slice to 1:model.T to gracefully handle when the user provides an iter_schedule longer than T
-#     actual_loss_history = strategy.loss_history[1:model.T]
-#     actual_iter_schedule = strategy.iter_schedule[1:model.T]
+    # Slice to 1:model.T to gracefully handle when the user provides an iter_schedule longer than T
+    actual_loss_history = strategy.loss_history[1:model.T]
+    actual_iter_schedule = strategy.iter_schedule[1:model.T]
 
-# 	loss_hist = actual_loss_history |> reverse
-# 	x = actual_iter_schedule |> reverse |> cumsum
-# 	pushfirst!(x, 0)
+	loss_hist = actual_loss_history |> reverse
+	x = actual_iter_schedule |> reverse |> cumsum
+	pushfirst!(x, 0)
 
-#     for t in 1:model.T
-# 		lines!(
-# 			ax,
-# 			(x[t]+1):x[t+1],
-# 			loss_hist[t]
-# 		)
-#     end
-#     ylims!(ax, 0.001, 1)
+    for t in 1:model.T
+		lines!(
+			ax,
+			(x[t]+1):x[t+1],
+			loss_hist[t]
+		)
+    end
+    ylims!(ax, 0.001, 1)
 
-#     return fig
-# end
+    return fig
+end
 
 # function plot_eval_loss_history(
 #     model::Model,

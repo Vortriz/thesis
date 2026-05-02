@@ -67,10 +67,10 @@ begin
 end
 
 # ╔═╡ ca80deb6-521f-4ed1-8c72-05ecc2c9b0af
+# ╠═╡ disabled = true
+#=╠═╡
 plot_bloch_sphere(target_ensemble)
-
-# ╔═╡ 2d672ebc-7dd9-4c30-aff5-ddf277f4e3a8
-
+  ╠═╡ =#
 
 # ╔═╡ ca871011-5c1a-4923-b7b1-667f3473583a
 begin
@@ -79,29 +79,24 @@ begin
 	params = randn(rng, Float64, (2 * model.n_qubits * model.n_layers, model.T))
 	ansatz = hardware_efficient_ansatz(model.n_data, model.n_ancilla, model.n_layers)
 
+	current_ensemble_ref = Ref{Any}(gen_dist(
+		Val(haar);
+		n_qubits=model.n_data,
+		n_samples=model.batch_size,
+	))
+
 	@progress for t in 1:T
-		params_t = params[:, t]
-		opt_state = Optimisers.setup(Optimisers.AdaGrad(0.005), params_t)
-		current_ensemble = gen_dist(
-			Val(haar);
-			n_qubits=model.n_data,
-			n_samples=model.batch_size,
+		# Create the combined register fresh for this timestep to avoid Zygote closure boxing
+		current_ensemble_with_ancilla = join(
+			current_ensemble_ref[],
+			zero_state(model.n_ancilla; nbatch=model.batch_size),
 		)
-		
-		# Pre-calculate dimensions and column offsets for fast gathering
-		n_a_dim = 1 << model.n_ancilla
-		n_d_dim = 1 << model.n_data
-		batch_size = model.batch_size
-		col_offsets = (0:batch_size-1) .* n_a_dim
+
+		current_params = params[:, t]
+		opt_state = Optimisers.setup(Optimisers.AdaGrad(0.005), current_params)
 		
 		# Pre-extract target state matrix to prevent Zygote from tracking property access
 		target_matrix = target_ensemble.state
-		
-		# Pre-join the constant input register with ancillas outside the loop
-		current_ensemble_with_ancilla = join(
-			current_ensemble,
-			zero_state(model.n_ancilla; nbatch=model.batch_size),
-		)
 		
 		@progress for epoch in 1:model.epoch_schedule[t]
 			# Sample a batch from the target ensemble
@@ -110,48 +105,47 @@ begin
 				model.batch_size,
 				replace=false,
 			)
-			target_batch = view(target_matrix, :, target_indices)
+			target_batch = target_matrix[:, target_indices]
 
-			loss, grads = Zygote.withgradient(params_t) do p
-				output_ensemble = apply(
+			loss, grads = Zygote.withgradient(current_params) do p
+				output_ensemble_with_ancilla = apply(
 					current_ensemble_with_ancilla,
 					dispatch(ansatz, p)
 				)
 
-				indices = Zygote.ignore() do
-					res = measure(output_ensemble, 1:model.n_ancilla)
-					vec(Int.(res)) .+ 1 .+ col_offsets
+				# Collapse the ancilla qubits
+				output_ensemble = Zygote.ignore() do
+					copy(output_ensemble_with_ancilla) |> Measure(model.n_qubits; locs=1:model.n_ancilla, remove=true)
 				end
 
-				# Manual collapse (Optimized with reshape and slice)
-				state_3d = reshape(output_ensemble.state, n_a_dim, n_d_dim, batch_size)
-				state_permuted = permutedims(state_3d, (2, 1, 3))
-				state_2d = reshape(state_permuted, n_d_dim, :)
-
-				# Extract unnormalized collapsed state using pre-calculated offsets
-				collapsed_state = state_2d[:, indices]
-				probs = sum(abs2, collapsed_state, dims=1)
-				
-				# Pre-calculate dot products on unnormalized states for efficiency
-				dot_products = target_batch' * collapsed_state
-				
-				# Normalize squared fidelity instead of states
-				fidelity_matrix = abs2.(dot_products) ./ (probs .+ 1e-12)
+				C = 1.0 .- abs2.(target_batch' * output_ensemble.state)
 				
 				Γ = Zygote.ignore() do
-	                ipot(1.0 .- fidelity_matrix)
+	                ipot(C)
 	            end
 
-				return -dot(Γ, fidelity_matrix)
+				return dot(Γ, C)
 			end
 
-			opt_state, params_t = Optimisers.update!(opt_state, params_t, grads[1])
+			opt_state, current_params = Optimisers.update!(opt_state, current_params, grads[1])
 			loss_history[t][epoch] = loss
 		end
 
-		params[:, t] = params_t
+		# Apply the trained circuit for this timestep to the full register
+		apply!(
+			current_ensemble_with_ancilla,
+			dispatch(ansatz, current_params)
+		)
+		
+		# Collapse and remove the ancilla qubits to get the data state
+		current_ensemble_ref[] = current_ensemble_with_ancilla |> Measure(model.n_qubits; locs=1:model.n_ancilla, remove=true)
+		
+		params[:, t] = current_params
 	end
 end
+
+# ╔═╡ 1984e8ba-e163-41b0-bc30-ed562a8443c2
+plot_loss_history(loss_history, "hello")
 
 # ╔═╡ Cell order:
 # ╟─b25c644c-e852-4151-9a95-0a68a9299036
@@ -160,5 +154,5 @@ end
 # ╠═fad927dd-6a9a-4937-ab4e-49ea33477f72
 # ╠═2ef55b67-465f-4141-9cbd-93c3068485e4
 # ╠═ca80deb6-521f-4ed1-8c72-05ecc2c9b0af
-# ╠═2d672ebc-7dd9-4c30-aff5-ddf277f4e3a8
 # ╠═ca871011-5c1a-4923-b7b1-667f3473583a
+# ╠═1984e8ba-e163-41b0-bc30-ed562a8443c2
