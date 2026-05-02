@@ -26,7 +26,7 @@ include("losses.jl")
 include("distributions.jl")
 # include("training_strategies/direct/base.jl")
 # include("training_strategies/layerwise/base.jl")
-# include("evaluation.jl")
+include("inference.jl")
 include("plotting.jl")
 
 end

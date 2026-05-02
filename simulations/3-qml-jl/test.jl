@@ -22,6 +22,7 @@ begin
 	using CairoMakie
 	using QuantumToolbox: Bloch, basis, expect, sigmax, sigmay, sigmaz, add_points!, render, rand_unitary
 	import Zygote
+	import Optimisers
 
 	using BenchmarkTools
 	using ProgressLogging
@@ -47,12 +48,12 @@ begin
 		n_data=1,
 		n_ancilla=1,
 		n_layers=4,
-		
+
 		dataset_size=1000,
 		batch_size=100,
-	
+
 		target_schedule=:direct,
-		epoch_schedule=fill(1, T),
+		epoch_schedule=fill(100, T),
 	)
 
 	target_ensemble = gen_dist(
@@ -73,23 +74,26 @@ begin
 		[zeros(Float64, n) for n in model.epoch_schedule]
 	params = randn(rng, Float64, (2 * model.n_qubits * model.n_layers, model.T))
 	ansatz = hardware_efficient_ansatz(model.n_data, model.n_ancilla, model.n_layers)
-	
+
 	@progress for t in 1:T
+		params_t = params[:, t]
+		opt_state = Optimisers.setup(Optimisers.AdaGrad(0.005), params_t)
 		current_ensemble = gen_dist(
 			Val(haar);
 			n_qubits=model.n_data,
 			n_samples=model.batch_size,
 		)
+		
 		@progress for epoch in 1:model.epoch_schedule[t]
 			current_ensemble_with_ancilla = join(
 				current_ensemble,
-				zero_state(model.n_ancilla; nbatch=model.batch_size)
+				zero_state(model.n_ancilla; nbatch=model.batch_size),
 			)
-			
-			loss, grads = Zygote.withgradient(params) do p
+
+			loss, grads = Zygote.withgradient(params_t) do p
 				output_ensemble = apply(
 					current_ensemble_with_ancilla,
-					dispatch(ansatz, params[:, t])
+					dispatch(ansatz, p[:, t])
 				)
 
 				outcomes = Zygote.ignore() do
@@ -97,7 +101,20 @@ begin
 					vec(Int.(res)) .+ 1
 				end
 
-				C = 1 .- abs2.(target_ensemble.state' * output_ensemble.state)
+				# Manual collapse
+
+				indices = Zygote.ignore() do
+					n_d_dim = 1 << model.n_data
+					n_a_dim = 1 << model.n_ancilla
+					
+					[outcomes[b] + (d-1) * n_a_dim + (b-1) * n_a_dim * n_d_dim
+					 for d in 1:n_d_dim, b in 1:model.batch_size]
+				end
+
+				collapsed_state = output_ensemble.state[indices]
+				collapsed_state = collapsed_state ./ sqrt.(sum(abs2, collapsed_state, dims=1))
+
+				C = 1 .- abs2.(target_ensemble.state' * collapsed_state)
 				Γ = Zygote.ignore() do
 	                ipot(C)
 	            end
@@ -105,10 +122,16 @@ begin
 				return Γ ⋅ C
 			end
 
+			opt_state, params_t = Optimisers.update!(opt_state, params_t, grads[1])
 			loss_history[t][epoch] = loss
 		end
+
+		params[:, t] = params_t
 	end
 end
+
+# ╔═╡ 8ff09ee4-098f-46f1-a45b-4f913a2e40e5
+
 
 # ╔═╡ Cell order:
 # ╟─b25c644c-e852-4151-9a95-0a68a9299036
@@ -118,3 +141,4 @@ end
 # ╠═2ef55b67-465f-4141-9cbd-93c3068485e4
 # ╠═ca80deb6-521f-4ed1-8c72-05ecc2c9b0af
 # ╠═ca871011-5c1a-4923-b7b1-667f3473583a
+# ╠═8ff09ee4-098f-46f1-a45b-4f913a2e40e5

@@ -1,4 +1,8 @@
-export test, denoise
+export inference
+
+function inference(model::Model, params::Matrix{Float64})
+
+end
 
 function denoise(model::Model, strategy::TrainingStrategy, input_reg::ConcreteBatchedArrayReg, params::Vector{Float64})
     input_with_ancilla = join(
