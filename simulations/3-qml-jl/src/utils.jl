@@ -1,4 +1,25 @@
-export ensemble_to_matrix, ensemble_to_matrix!, ensemble_to_batch, matrix_to_ensemble, generate_rand_ensemble, initialize_backward_ensemble, intrange, record_run, save_weights, load_weights, generate_backward_pass
+export ensemble_to_matrix, ensemble_to_matrix!, ensemble_to_batch, matrix_to_ensemble, generate_rand_ensemble, initialize_backward_ensemble, intrange, record_run, save_weights, load_weights, generate_backward_pass, stochastic_collapse
+
+function stochastic_collapse(ensemble::BatchedArrayReg, n_ancilla::Int, n_data::Int)
+    batch_size = ensemble.nbatch
+    n_a_dim = 1 << n_ancilla
+    n_d_dim = 1 << n_data
+    
+    indices = Zygote.ignore() do
+        col_offsets = (0:batch_size-1) .* n_a_dim
+        res = measure(ensemble, 1:n_ancilla)
+        vec(Int.(res)) .+ 1 .+ col_offsets
+    end
+
+    state_3d = reshape(ensemble.state, n_a_dim, n_d_dim, batch_size)
+    state_permuted = permutedims(state_3d, (2, 1, 3))
+    state_2d = reshape(state_permuted, n_d_dim, :)
+
+    collapsed_state = state_2d[:, indices]
+    probs = sum(abs2, collapsed_state, dims=1)
+    
+    return collapsed_state ./ sqrt.(probs .+ 1e-12)
+end
 
 # function normalize!(M::Matrix{ComplexF64})
 #     norms = sqrt.(sum(abs2, M; dims=1))
