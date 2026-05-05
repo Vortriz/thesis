@@ -7,12 +7,14 @@ export Distribution, clustered, qkrlocalized, circle, haar
     haar
 end
 
+
 export TargetSchedule, diffusion, direct
 
 @enum TargetSchedule begin
     diffusion
     direct
 end
+
 
 export Model
 
@@ -27,17 +29,17 @@ struct Model
     dataset_size::Int64
     batch_size::Int64
 
-    target_schedule::Union{Vector{Int64}, Val{TargetSchedule}}
+    target_schedule::Vector{Int64}
     epoch_schedule::Vector{Int64}
 
     function Model(;
-        n_data,
-        n_ancilla,
-        n_layers,
-        dataset_size,
-        batch_size,
-        target_schedule,
-        epoch_schedule,
+        n_data::Int64,
+        n_ancilla::Int64,
+        n_layers::Int64,
+        dataset_size::Int64,
+        batch_size::Int64,
+        target_schedule::Symbol,
+        epoch_schedule::Vector{Int64},
     )
         T = epoch_schedule |> length
 
@@ -70,17 +72,7 @@ struct Model
 end
 
 
-export TrainingStrategy, SequentialStrategy, DirectStrategy
-
-abstract type TrainingStrategy end
-abstract type SequentialStrategy <: TrainingStrategy end
-abstract type DirectStrategy <: TrainingStrategy end
-
-
-export ConcreteArrayReg, ConcreteBatchedArrayReg, Ensemble, OffsetEnsemble, OffsetEnsembleCollection
+export ConcreteArrayReg, ConcreteBatchedArrayReg
 
 const ConcreteArrayReg = ArrayReg{2, ComplexF64, Matrix{ComplexF64}}
 const ConcreteBatchedArrayReg = BatchedArrayReg{2, ComplexF64, Matrix{ComplexF64}}
-const Ensemble = Vector{ConcreteArrayReg}
-# const OffsetEnsemble = OffsetVector{ConcreteArrayReg, Ensemble}
-# const OffsetEnsembleCollection = OffsetMatrix{ConcreteArrayReg, Matrix{ConcreteArrayReg}}

@@ -1,4 +1,4 @@
-export gen_dist #, scramble!
+export gen_dist
 
 # [MARK] should we have all BatchedArrayReg with transposed storage?
 
@@ -19,6 +19,7 @@ function gen_dist(
 	return ensemble
 end
 
+# [MARK] try using QuantumToolbox.jl
 function gen_dist(
     ::Val{qkrlocalized};
     n_qubits::Int64,
@@ -78,20 +79,3 @@ function gen_dist(
 )::BatchedArrayReg
 	return rand_state(ComplexF64, n_qubits; nbatch=n_samples, no_transpose_storage=true)
 end
-
-# function scramble!(
-
-#     weight_schedule
-# )
-#     for t in 1:model.T
-#         for s in 1:model.dataset_size
-#             params = vcat(
-#                 weight_schedule[t] * (rand(model.rng, model.n_qubits * 3) * pi/4 .- pi/8),
-#                 weight_schedule[t] * (rand(model.rng, binomial(model.n_qubits, 2)) * 0.2 .+ 0.4) /
-#                 (2.0 * sqrt(model.n_qubits)),
-#             )
-#             circuit = dispatch(model.forward_circuit, params)
-#             model.forward_ensembles[s, t] = apply(model.forward_ensembles[s, t-1], circuit)
-#         end
-#     end
-# end
