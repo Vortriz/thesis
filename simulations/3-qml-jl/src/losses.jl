@@ -1,10 +1,12 @@
 export mmd_distance, wasserstein_distance, optimal_transport_plan, sinkhorn_distance
 
+
 # Maximum Mean Discrepancy (MMD)
 function mmd_distance(
-	ensemble1::Matrix{ComplexF64},
-	ensemble2::Matrix{ComplexF64},
+	ensemble1::CTBMatrix,
+	ensemble2::CTBMatrix,
 )::Float64
+
     ensemble1_c = ensemble1'
     ensemble2_c = ensemble2'
 
@@ -15,6 +17,7 @@ function mmd_distance(
     return 2.0 * r12 - r11 - r22
 end
 
+
 # Based on https://github.com/xieyujia/IPOT/blob/master/ipot.py
 function optimal_transport_plan(
 	C::Matrix{Float64};
@@ -22,6 +25,7 @@ function optimal_transport_plan(
     max_iter::Int = 500,
     L::Int = 1,
 )::Matrix{Float64}
+
     N1, N2 = size(C)
 	a1 = fill(1.0 / N1, N1)
 	a2 = fill(1.0 / N2, N2)
@@ -49,14 +53,16 @@ function optimal_transport_plan(
     return P
 end
 
+
 # Wasserstein (IPOT)
 function wasserstein_distance(
-	ensemble1::Matrix{ComplexF64},
-	ensemble2::Matrix{ComplexF64};
+	ensemble1::CTBMatrix,
+	ensemble2::CTBMatrix;
     beta::Float64 = 0.01,
     max_iter::Int = 500,
     L::Int = 1,
-)::Union{Float64, Matrix{Float64}}
+)::Float64
+
     N1 = size(ensemble1, 2)
 	N2 = size(ensemble2, 2)
 	a1 = ones(Float64, (N1)) ./ N1
@@ -68,9 +74,10 @@ function wasserstein_distance(
     return sum(P .* C)
 end
 
+
 function sinkhorn_distance(
-	ensemble1::Matrix{ComplexF64},
-	ensemble2::Matrix{ComplexF64}
+	ensemble1::CTBMatrix,
+	ensemble2::CTBMatrix,
 )::Float64
 
 	N1 = size(ensemble1, 2)
@@ -80,6 +87,6 @@ function sinkhorn_distance(
 	C = 1.0 .- abs2.(ensemble1' * ensemble2)
 
 	return sinkhorn_divergence(
-        a1, a2, C, 0.03; maxiter=1000, atol=rtol = 0, regularization=true
+        a1, a2, C, 0.03; maxiter=1000, atol=rtol = 0, regularization=true,
     )
 end

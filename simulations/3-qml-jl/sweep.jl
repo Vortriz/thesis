@@ -11,9 +11,9 @@ end
 Pkg.instantiate()
 
 @everywhere include("src/base.jl")
-using .QDDPM
+using .QML
 @everywhere begin
-    using Main.QDDPM
+    using Main.QML
     using Random, Statistics, Optimisers
 end
 

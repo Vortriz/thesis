@@ -1,7 +1,7 @@
-export plot_bloch_sphere, plot_loss_history
+export plot_bloch_sphere, plot_loss_history, plot_scrambling_decay
 
-function plot_bloch_sphere(ensemble::BatchedArrayReg)
-	dims, n_samples = ensemble.state.size
+function plot_bloch_sphere(ensemble::CTBArrayReg)
+	n_samples, dims = ensemble.state.parent.size
 	if dims != 2
    	    @info "Plotting on Bloch sphere is only available for 1 qubit system."
 		return
@@ -55,33 +55,41 @@ function plot_loss_history(loss_history::Vector{Vector{Float64}})
 
 end
 
-# function plot_forward_fidelity_decay(model::Model)
-# 	rand_ensemble = generate_rand_ensemble(model.n_qubits, model.dataset_size)
+function plot_scrambling_decay(
+    arch::ModelArch,
+    config::TrainConfig;
+    trajectory::Vector{CTBArrayReg},
+    metric::Function
+)
+	rand_ensemble = gen_dist(
+		Val(haar);
+		n_qubits=arch.n_data,
+		n_samples=config.dataset_size,
+	)
 
-#     for t in eachindex(model.forward_fidelity_decay)
-#         model.forward_fidelity_decay[t] = mmd_distance(
-# 			model.forward_ensembles[:, t] |> OffsetArrays.no_offset_view,
-# 			rand_ensemble,
-# 		)
-#     end
+    distances = Float64[]
+    for ensemble in trajectory
+        push!(distances, metric(ensemble.state, rand_ensemble.state))
+    end
 
-#     fig = Figure()
-#     ax = Axis(
-# 		fig[1, 1],
-# 		# yscale = log10,
-# 		xlabel = L"t",
-# 		ylabel = "MMD Distance \n (wrt Random Ensemble)",
-# 		title = "Forward fidelity decay (MMD)"
-# 	)
-#     ax.xgridvisible = false
-#     ax.ygridvisible = false
-#     ax.yticks = 0:0.2:1
-#     ylims!(ax, 0, 1)
+    metric_name = string(nameof(metric))
 
-#     scatter!(ax, model.forward_fidelity_decay)
+    fig = Figure()
+    ax = Axis(
+		fig[1, 1],
+		xlabel = "t",
+		ylabel = "$metric_name \n (wrt Random Ensemble)",
+		title = "Scrambling Decay ($metric_name)"
+	)
+    ax.xgridvisible = false
+    ax.ygridvisible = false
+    ax.yticks = 0:0.2:1
+    ylims!(ax, 0, 1)
 
-#     return fig
-# end
+    scatter!(ax, 0:config.T, distances)
+
+    return fig
+end
 
 # function plot_eval_loss_history(
 #     model::Model,

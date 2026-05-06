@@ -1,22 +1,18 @@
 export gen_dist
 
-# [MARK] should we have all BatchedArrayReg with transposed storage?
-
 function gen_dist(
     ::Val{clustered},
     rng::AbstractRNG;
     n_qubits::Int64,
     n_samples::Int64,
     spread::Float64=0.05,
-)::BatchedArrayReg
+)::CTBArrayReg
     ensemble = (
         randn(rng, ComplexF64, (2^n_qubits, 1))
             .+ spread * randn(rng, ComplexF64, (2^n_qubits, n_samples))
     )
-	ensemble = ensemble |> BatchedArrayReg
-	normalize!(ensemble)
 
-	return ensemble
+	return batch_and_normalize(ensemble)
 end
 
 # [MARK] try using QuantumToolbox.jl
@@ -26,7 +22,7 @@ function gen_dist(
     n_samples::Int64,
     K::Float64=12.0,
     ħₛ::Float64=0.7,
-)::BatchedArrayReg
+)::CTBArrayReg
     dims = 2^n_qubits
     @assert n_samples <= dims "Number of samples cannot exceed the dimension of the Hilbert space."
 
@@ -43,17 +39,15 @@ function gen_dist(
 	end
 
 	eigenstates = eigen(U).vectors[:, 1:n_samples]
-	eigenstates = eigenstates |> BatchedArrayReg
-	normalize!(eigenstates)
 
-	return eigenstates
+	return batch_and_normalize(eigenstates)
 end
 
 function gen_dist(
     ::Val{circle};
     n_qubits::Int64,
     n_samples::Int64,
-)::BatchedArrayReg
+)::CTBArrayReg
     @assert n_qubits == 1 "Circle distribution is only defined for 1 qubit system."
 
     ensemble = zeros(ComplexF64, (2^n_qubits, n_samples))
@@ -66,16 +60,13 @@ function gen_dist(
         )
     end
 
-    ensemble = ensemble |> BatchedArrayReg
-    normalize!(ensemble)
-
-    return ensemble
+    return batch_and_normalize(ensemble)
 end
 
 function gen_dist(
     ::Val{haar};
     n_qubits::Int64,
     n_samples::Int64,
-)::BatchedArrayReg
-	return rand_state(ComplexF64, n_qubits; nbatch=n_samples, no_transpose_storage=true)
+)::CTBArrayReg
+	return rand_state(ComplexF64, n_qubits; nbatch=n_samples)
 end

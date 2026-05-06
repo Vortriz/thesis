@@ -21,8 +21,7 @@ function scramble_circuit(n_qubits::Int64)::ChainBlock
     return circuit
 end
 
-function hardware_efficient_ansatz(n_data::Int64, n_ancilla::Int64, n_layers::Int64)::ChainBlock
-	n_qubits = n_data + n_ancilla
+function hardware_efficient_ansatz(n_qubits::Int64, n_layers::Int64)::ChainBlock
 	register = 1:n_qubits
 	entangle_pairs = if n_qubits == 2
 		[(1,2)]

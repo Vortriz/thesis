@@ -1,4 +1,4 @@
-module QDDPM
+module QML
 
 using Random
 using LinearAlgebra
@@ -22,8 +22,8 @@ using ProgressLogging
 
 # Order is important
 include("types.jl")
-include("utils.jl")
 include("circuits.jl")
+include("utils.jl")
 include("losses.jl")
 include("distributions.jl")
 include("inference.jl")

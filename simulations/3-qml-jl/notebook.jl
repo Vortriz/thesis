@@ -16,7 +16,7 @@ end
 # ╔═╡ 9ba0daf4-2b8e-47c8-beb4-796bfa13f4f5
 begin
 	include("src/base.jl")
-	using .QDDPM
+	using .QML
 end
 
 # ╔═╡ c9dfae33-aef0-42e5-b43c-87d542a1b428
