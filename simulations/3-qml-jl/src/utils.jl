@@ -3,7 +3,6 @@ export collapse
 function collapse(
 	::Val{alternate},
     arch::ModelArch,
-	rng::AbstractRNG,
 	ensemble::CTBArrayReg,
 )::Matrix{ComplexF64}
 
@@ -13,9 +12,9 @@ function collapse(
     n_a_dim = 1 << n_ancilla
     n_d_dim = 1 << n_data
 
-    indices = Zygote.ignore() do
+    indices::Vector{Int64} = Zygote.ignore() do
         col_offsets = (0:batch_size-1) .* n_a_dim
-        res = measure(ensemble, 1:n_ancilla; rng=rng)
+        res = measure(ensemble, 1:n_ancilla)
         vec(Int.(res)) .+ 1 .+ col_offsets
     end
 
@@ -32,7 +31,6 @@ end
 function collapse(
 	::Val{normal},
 	arch::ModelArch,
-	rng::AbstractRNG,
 	ensemble::CTBArrayReg,
 )::Matrix{ComplexF64}
 
@@ -42,10 +40,10 @@ function collapse(
 	n_a_dim = 1 << n_ancilla
 	n_d_dim = 1 << n_data
 
-	indices = Zygote.ignore() do
+	indices::Vector{Int64} = Zygote.ignore() do
 		col_offsets = (0:batch_size-1) .* n_a_dim
 		# Measure HIGHER bits (the data bits)
-		res = measure(ensemble, (n_data+1):(n_data+n_ancilla); rng=rng)
+		res = measure(ensemble, (n_data+1):(n_data+n_ancilla))
 		vec(Int.(res)) .+ 1 .+ col_offsets
 	end
 
@@ -112,20 +110,17 @@ export apply_pqc
 
 function apply_pqc(
 	arch::ModelArch,
-	rng::AbstractRNG,
-	params::Vector{Float64},
 	input_ensemble::CTBArrayReg,
-)::CTBMatrix
-
+	params::Vector{Float64},
+)
 	output_ensemble = apply(
 		input_ensemble,
 		dispatch(arch.ansatz, params),
 	)
 
 	collapsed_ensemble_matrix = collapse(
-		Val(arch.collapse_method),
+		arch.collapse_method,
 		arch,
-		rng,
 		output_ensemble,
 	)
 
@@ -137,18 +132,16 @@ export loss_and_grads
 
 function loss_and_grads(
 	arch::ModelArch,
-	rng::AbstractRNG,
 	params::Vector{Float64},
 	input_ensemble::CTBArrayReg,
-	target_matrix::CTBMatrix,
+	target_matrix::AbstractMatrix{ComplexF64},
 )
 	return (
 		Zygote.withgradient(params) do p
 			collapsed_ensemble_matrix = apply_pqc(
 				arch,
-				rng,
-				p,
 				input_ensemble,
+				p,
 			)
 
 			C = 1.0 .- abs2.(target_matrix' * collapsed_ensemble_matrix)

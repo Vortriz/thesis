@@ -3,7 +3,6 @@ export inference
 function inference(
 	arch::ModelArch,
 	config::TrainConfig,
-	rng::AbstractRNG,
 	initial_ensemble::CTBArrayReg,
 	params::Matrix{Float64}
 )::CTBArrayReg
@@ -15,9 +14,8 @@ function inference(
 
         current_ensemble = apply_pqc(
 			arch,
-			rng,
-			params[:, t],
 			current_ensemble,
+			params[:, t],
 		) |> BatchedArrayReg |> transpose_storage
     end
 

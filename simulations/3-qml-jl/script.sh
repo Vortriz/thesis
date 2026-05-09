@@ -1,10 +1,8 @@
 #!/bin/bash
-#SBATCH -N 1  #specifies number of nodes
-#SBATCH --ntasks-per-node=48 #specifies core per node
-#SBATCH --mem=128G
+#SBATCH -G 1  #specifies number of GPUs
 #SBATCH --time=12:00:00 #specifies maximum duration of run
-#SBATCH --job-name=QML_sweep #specifies job name
+#SBATCH --job-name=QML #specifies job name
 #SBATCH --error=job.%J.err #specifies error file name
 #SBATCH --output=job.%J.out #specifies output file name
 
-time julia -p 44 sweep.jl
+srun --unbuffered time julia -t auto notebook.jl

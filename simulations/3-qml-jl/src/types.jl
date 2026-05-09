@@ -24,14 +24,14 @@ end
 
 export ModelArch, TrainConfig
 
-struct ModelArch
+struct ModelArch{C}
     n_data::Int64
     n_ancilla::Int64
     n_qubits::Int64
     n_layers::Int64
     ansatz::ChainBlock{2}
     n_params_ppb::Int64 # Number of parameters per PQC block
-    collapse_method::CollapseMethod
+    collapse_method::C
 
     function ModelArch(;
         n_data::Int64,
@@ -43,7 +43,8 @@ struct ModelArch
         n_qubits = n_data + n_ancilla
         ansatz = ansatz_builder(n_qubits, n_layers)
         n_params_ppb = ansatz |> parameters |> length
-        new(n_data, n_ancilla, n_qubits, n_layers, ansatz, n_params_ppb, collapse_method)
+        C = typeof(Val(collapse_method))
+        new{C}(n_data, n_ancilla, n_qubits, n_layers, ansatz, n_params_ppb, Val(collapse_method))
     end
 end
 

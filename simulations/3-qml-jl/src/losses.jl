@@ -63,12 +63,7 @@ function wasserstein_distance(
     L::Int = 1,
 )::Float64
 
-    N1 = size(ensemble1, 2)
-	N2 = size(ensemble2, 2)
-	a1 = ones(Float64, (N1)) ./ N1
-	a2 = ones(Float64, (N2)) ./ N2
 	C = 1.0 .- abs2.(ensemble1' * ensemble2)
-
     P = optimal_transport_plan(C; beta, max_iter, L)
 
     return sum(P .* C)

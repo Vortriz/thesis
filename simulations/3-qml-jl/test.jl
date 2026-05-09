@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ b25c644c-e852-4151-9a95-0a68a9299036
+# ╔═╡ c77d87a0-4a3c-11f1-b15a-5db1dff58976
 begin
     import Pkg
 
@@ -13,10 +13,16 @@ begin
     Pkg.instantiate()
 end
 
-# ╔═╡ 9628d483-547c-49fa-b4ea-4a7625cded6e
+# ╔═╡ a761dda7-0017-4ca4-bd7e-c9d327df65d0
+# ╠═╡ show_logs = false
+begin
+	include("src/base.jl")
+	using .QML
+end
+
+# ╔═╡ 720275a3-0f9e-49a7-8b4d-2e96f70f1a78
 begin
 	using Yao
-	using YaoPlots
 	using Random
 	using LinearAlgebra
 	using CairoMakie
@@ -24,217 +30,137 @@ begin
 	import Zygote
 	import Optimisers
 
-	using BenchmarkTools
 	using ProgressLogging
+	using BenchmarkTools
+	using JET
+	using ProfilePerfetto
 end
 
-# ╔═╡ 8c3908e0-d000-494e-976e-66181a8766e2
+# ╔═╡ f87a8c67-a279-49d8-b20f-c2a5a07423a8
 begin
-	include("src/base.jl")
-	using .QML
+	using YaoPlots
+	YaoPlots.darktheme!()
 end
 
-# ╔═╡ fad927dd-6a9a-4937-ab4e-49ea33477f72
-begin
-	YaoPlots.CircuitStyles.linecolor[] = "#ffffff"
-	YaoPlots.CircuitStyles.textcolor[] = "#ffffff"
-	rng = MersenneTwister(1234)
-end
+# ╔═╡ 0dc82d60-ad67-4cd1-a501-b9ecea612984
+const rng = MersenneTwister(1234)
 
-# ╔═╡ 2ef55b67-465f-4141-9cbd-93c3068485e4
+# ╔═╡ 7e386bf9-3d9e-4852-b7cf-67f2b3ef2f61
 begin
-	T=4
+	T=2
 	arch = ModelArch(
-		n_data=1,
+		n_data=5,
 		n_ancilla=2,
-		n_layers=4,
-		ansatz_builder=hardware_efficient_ansatz,
-		collapse_method=normal
+		n_layers=3,
+		ansatz_builder=HEA,
+		collapse_method=alternate,
 	)
 	
 	config = TrainConfig(
 		dataset_size=1000,
-		batch_size=400,
+		batch_size=100,
 		target_schedule=:direct,
-		epoch_schedule=fill(200, T),
-		optimizer=Optimisers.AMSGrad(0.005)
+		epoch_schedule=fill(500, T),
+		optimizer=Optimisers.AMSGrad(0.1),
 	)
 
 	target_ensemble = gen_dist(
-		Val(circle);
+		Val(clustered),
+		rng;
 		n_qubits=arch.n_data,
 		n_samples=config.dataset_size,
 	)
-end
+	initial_ensemble = gen_dist(
+		Val(haar);
+		n_qubits=arch.n_data,
+		n_samples=config.batch_size,
+	)
+end;
 
-# ╔═╡ ca80deb6-521f-4ed1-8c72-05ecc2c9b0af
+# ╔═╡ 4c5794a9-c5e1-46f8-84b6-195d91fe63d7
 plot_bloch_sphere(target_ensemble)
 
-# ╔═╡ 278ac457-999e-4d92-a2ac-38f46432f0a1
-initial_ensemble = gen_dist(
-	Val(haar);
-	n_qubits=arch.n_data,
-	n_samples=config.batch_size,
+# ╔═╡ f845e549-9e6d-4d25-b379-55ecafa7c559
+function train(
+	arch::ModelArch,
+	config::TrainConfig,
+	target_trajectory::Vector{CTBArrayReg},
 )
+	params = rand(rng, Float64, (arch.n_params_ppb, config.T))
+	loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
 
-# ╔═╡ ca871011-5c1a-4923-b7b1-667f3473583a
-begin
-	function train(
-		arch::ModelArch,
-		config::TrainConfig,
-		target_trajectory::Vector{CTBArrayReg},
-	)
-		params = randn(rng, Float64, (arch.n_params_ppb, config.T))
-		loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
+	current_ensemble = target_trajectory[end] |> copy
 
-		current_ensemble = target_trajectory[end] |> copy
+	@progress for t in 1:config.T
+		append_qubits!(current_ensemble, arch.n_ancilla)
 
-		@progress for t in 1:config.T
-			append_qubits!(current_ensemble, arch.n_ancilla)
+		current_params = params[:, t]
+		opt_state = Optimisers.setup(config.optimizer, current_params)
+		
+		target_idx = config.target_schedule[t]
+		target_matrix = target_trajectory[target_idx].state
 
-			current_params = params[:, t]
-			opt_state = Optimisers.setup(config.optimizer, current_params)
-			
-			target_idx = config.target_schedule[t]
-			target_matrix = target_trajectory[target_idx].state
+		@progress for epoch in 1:config.epoch_schedule[t]
+			target_indices = sample(
+				1:config.dataset_size,
+				config.batch_size,
+				replace=false,
+			)
+			target_batch = @view target_matrix[:, target_indices]
 
-			@progress for epoch in 1:config.epoch_schedule[t]
-				target_indices = sample(
-					1:config.dataset_size,
-					config.batch_size,
-					replace=false,
-				)
-				target_batch = target_matrix[:, target_indices]
-
-				loss, grads = loss_and_grads(
+			loss, grads = loss_and_grads(
 					arch,
-					rng,
 					current_params,
 					current_ensemble,
 					target_batch,
 				)
 
-				Optimisers.update!(opt_state, current_params, grads[1])
-				loss_history[t][epoch] = loss
-			end
-
-			current_ensemble = apply_pqc(
-				arch,
-				rng,
-				current_params,
-				current_ensemble,
-			) |> BatchedArrayReg |> transpose_storage
-			
-			params[:, t] = current_params
+			Optimisers.update!(opt_state, current_params, grads[1])
+			loss_history[t][epoch] = loss
 		end
 
-		return loss_history, params
+		current_ensemble = apply_pqc(
+			arch,
+			current_ensemble,
+			current_params,
+		) |> BatchedArrayReg |> transpose_storage
+		
+		params[:, t] = current_params
 	end
 
-	
-	
-	# Forward pass to create the scrambling trajectory
-	# scramble_weight_schedule = fill(1.0, config.T)
-	# target_trajectory = scramble(
-	# 	arch,
-	# 	config,
-	# 	rng,
-	# 	target_ensemble;
-	# 	weight_schedule=scramble_weight_schedule
-	# )
-	target_trajectory = [target_ensemble, initial_ensemble]
+	return loss_history, params
+end
 
+# ╔═╡ b5b829f9-931e-451c-b734-ff5c8bff8eec
+begin
+	target_trajectory = [target_ensemble, initial_ensemble]
 	loss_history, trained_params = train(arch, config, target_trajectory)
 end
 
-# ╔═╡ 1984e8ba-e163-41b0-bc30-ed562a8443c2
-plot_loss_history(loss_history)
-
-# ╔═╡ 079dbcb4-d72e-459b-99ca-8ed601b99dde
+# ╔═╡ 99df8fa2-8bff-4ba6-8dfd-4fe892815962
 generated_ensemble = inference(
 	arch,
 	config,
-	rng,
 	initial_ensemble,
 	trained_params,
 )
 
-# ╔═╡ 5e0b724f-e1cc-4d4f-8594-312906c938a9
+# ╔═╡ da5377db-aa38-4852-9062-ed7b888c0738
 plot_bloch_sphere(generated_ensemble)
 
-# ╔═╡ 00928b1d-acf6-401b-9215-12a22da65efd
-hardware_efficient_ansatz |> typeof
-
-# ╔═╡ fa6a85fe-11e9-4198-95aa-9277c17c0345
-cl = gen_dist(
-	Val(clustered),
-	rng;
-	n_qubits=arch.n_data,
-	n_samples=config.dataset_size,
-)
-
-# ╔═╡ de4c8f20-f166-45b8-9998-61fc8123d381
-trajectory = scramble(
-	arch,
-	config,
-	rng,
-	cl,
-	weight_schedule=range(0.5, 3, config.T) |> collect
-)
-
-# ╔═╡ 0a7a1268-2da6-42ab-9bb5-9166291d0e14
-trajectory[3] |> plot_bloch_sphere
-
-# ╔═╡ ecccf125-c9cc-4309-9e92-cfba75683803
-trajectory[1].state[:, 1:100]
-
-# ╔═╡ 00449b2a-8935-40bc-9f03-d03612816a44
-plot_scrambling_decay(
-	arch,
-	config;
-	trajectory=trajectory,
-	metric=mmd_distance
-)
-
-# ╔═╡ 269617b0-4a59-430b-8b7a-58bcb2ef3999
-zero_state(2; nbatch=3).state
-
-# ╔═╡ b1b2b3b4-c5c6-d7d8-e9f0-a1a2a3a4a5a6
-begin
-	# 1. Test allocations and memory contiguity when reshaping a Transpose matrix
-	orig_matrix = rand(ComplexF64, 16, 100)
-	transposed_matrix = transpose(orig_matrix)
-	
-	# Warm up the compiler
-	reshape(transposed_matrix, 4, 4, 100)
-	
-	# Measure actual allocations
-	allocs = @allocated reshape(transposed_matrix, 4, 4, 100)
-	reshaped_type = typeof(reshape(transposed_matrix, 4, 4, 100))
-	
-	@show Dict(
-		:allocations_from_reshape => allocs,
-		:type_of_reshaped_transpose => string(reshaped_type)
-	)
-end
+# ╔═╡ 55881a2c-598c-48f2-b4fa-eab7e96a9ba4
+plot_loss_history(loss_history)
 
 # ╔═╡ Cell order:
-# ╟─b25c644c-e852-4151-9a95-0a68a9299036
-# ╠═9628d483-547c-49fa-b4ea-4a7625cded6e
-# ╠═8c3908e0-d000-494e-976e-66181a8766e2
-# ╟─fad927dd-6a9a-4937-ab4e-49ea33477f72
-# ╠═2ef55b67-465f-4141-9cbd-93c3068485e4
-# ╠═ca80deb6-521f-4ed1-8c72-05ecc2c9b0af
-# ╠═ca871011-5c1a-4923-b7b1-667f3473583a
-# ╠═1984e8ba-e163-41b0-bc30-ed562a8443c2
-# ╠═278ac457-999e-4d92-a2ac-38f46432f0a1
-# ╠═079dbcb4-d72e-459b-99ca-8ed601b99dde
-# ╠═5e0b724f-e1cc-4d4f-8594-312906c938a9
-# ╠═00928b1d-acf6-401b-9215-12a22da65efd
-# ╠═fa6a85fe-11e9-4198-95aa-9277c17c0345
-# ╠═de4c8f20-f166-45b8-9998-61fc8123d381
-# ╠═0a7a1268-2da6-42ab-9bb5-9166291d0e14
-# ╠═ecccf125-c9cc-4309-9e92-cfba75683803
-# ╠═00449b2a-8935-40bc-9f03-d03612816a44
-# ╠═269617b0-4a59-430b-8b7a-58bcb2ef3999
-# ╠═b1b2b3b4-c5c6-d7d8-e9f0-a1a2a3a4a5a6
+# ╟─c77d87a0-4a3c-11f1-b15a-5db1dff58976
+# ╠═a761dda7-0017-4ca4-bd7e-c9d327df65d0
+# ╠═720275a3-0f9e-49a7-8b4d-2e96f70f1a78
+# ╟─f87a8c67-a279-49d8-b20f-c2a5a07423a8
+# ╟─0dc82d60-ad67-4cd1-a501-b9ecea612984
+# ╠═7e386bf9-3d9e-4852-b7cf-67f2b3ef2f61
+# ╠═4c5794a9-c5e1-46f8-84b6-195d91fe63d7
+# ╠═f845e549-9e6d-4d25-b379-55ecafa7c559
+# ╠═b5b829f9-931e-451c-b734-ff5c8bff8eec
+# ╠═99df8fa2-8bff-4ba6-8dfd-4fe892815962
+# ╠═da5377db-aa38-4852-9062-ed7b888c0738
+# ╠═55881a2c-598c-48f2-b4fa-eab7e96a9ba4
