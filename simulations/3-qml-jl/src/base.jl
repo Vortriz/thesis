@@ -25,6 +25,8 @@ export Device, StorageType
 # I hope this is not cursed
 const Device = CUDA.functional() ? CUDA : Base
 const StorageType = CUDA.functional() ? CuArray : Array
+# const Device = Base
+# const StorageType = Array
 
 # Order is important
 include("types.jl")

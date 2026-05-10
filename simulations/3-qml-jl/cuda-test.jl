@@ -40,13 +40,13 @@ end
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    const T = 2
+    const T = 6
 	const rng = MersenneTwister(1234)
     arch = ModelArch(
-        n_data=5,
-        n_ancilla=2,
-        n_layers=3,
-        ansatz_builder=HEA,
+        n_data=8,
+        n_ancilla=4,
+        n_layers=6,
+        ansatz_builder=EHA,
         collapse_method=alternate,
     )
 
@@ -54,7 +54,7 @@ begin
         dataset_size=1000,
         batch_size=100,
         target_schedule=:direct,
-        epoch_schedule=fill(500, T),
+        epoch_schedule=[300, 600, 600, 600, 600, 600],
         optimizer=Optimisers.AMSGrad(0.1),
     )
 
@@ -138,18 +138,14 @@ end
 # ╔═╡ de779e94-a981-4020-a5d8-ef25ba701015
 begin
     target_trajectory::Vector{CBArrayReg} = [target_ensemble, initial_ensemble]
-    loss_history, trained_params = train(arch, config, target_trajectory)
+    loss_history, params = train(arch, config, target_trajectory)
 end
 
 # ╔═╡ eca56e03-c725-4792-9032-7d4738706f0e
-target_trajectory[1] |> typeof <: CBArrayReg
+target_trajectory[1] |> typeof
 
-# ╔═╡ bf97557d-ceb0-4e2c-b5ea-cdbf71bc263e
-apply_pqc(
-	arch,
-	curand_state(arch.n_qubits; nbatch=config.batch_size),
-	rand(Float64, arch.n_params_ppb)
-)
+# ╔═╡ e7010f58-8607-4bd6-97d2-b0a3a668bbb5
+plot_loss_history(loss_history)
 
 # ╔═╡ Cell order:
 # ╟─168a33fa-4be8-11f1-937a-99ef8733e91e
@@ -161,4 +157,4 @@ apply_pqc(
 # ╠═1af82bcf-1787-403e-a4c8-8bc59f1bd995
 # ╠═de779e94-a981-4020-a5d8-ef25ba701015
 # ╠═eca56e03-c725-4792-9032-7d4738706f0e
-# ╠═bf97557d-ceb0-4e2c-b5ea-cdbf71bc263e
+# ╠═e7010f58-8607-4bd6-97d2-b0a3a668bbb5

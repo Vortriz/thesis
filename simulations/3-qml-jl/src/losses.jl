@@ -31,17 +31,23 @@ function optimal_transport_plan(
     a2 = Device.fill(1.0 / N2, N2)
 
     P = Device.fill(1.0 / (N1 * N2), N1, N2)
-    K = exp.(-C ./ beta)
+    K = exp.(-(C ./ beta))
+    Q = similar(P)
     u = Device.ones(Float64, N1)
     v = Device.ones(Float64, N2)
+    Qv_buffer = similar(u)
+    QTu_buffer = similar(v)
 
     for _ in 1:max_iter
-        Q = K .* P
+        @. Q = K * P
         for _ in 1:L
-            u = a1 ./ (Q * v)
-            v = a2 ./ (Q' * u)
+            mul!(Qv_buffer, Q, v)
+            @. u = a1 / Qv_buffer
+
+            mul!(QTu_buffer, Q', u)
+            @. v = a2 / QTu_buffer
         end
-        P = u .* Q .* v'
+        @. P = u * Q * v'
     end
 
     return P
