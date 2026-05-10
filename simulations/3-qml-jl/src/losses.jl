@@ -3,8 +3,8 @@ export mmd_distance, wasserstein_distance, optimal_transport_plan, sinkhorn_dist
 
 # Maximum Mean Discrepancy (MMD)
 function mmd_distance(
-	ensemble1::CTBMatrix,
-	ensemble2::CTBMatrix,
+    ensemble1::CBMatrix,
+    ensemble2::CBMatrix,
 )::Float64
 
     ensemble1_c = ensemble1'
@@ -20,34 +20,28 @@ end
 
 # Based on https://github.com/xieyujia/IPOT/blob/master/ipot.py
 function optimal_transport_plan(
-	C::Matrix{Float64};
-    beta::Float64 = 0.01,
-    max_iter::Int = 500,
-    L::Int = 1,
-)::Matrix{Float64}
+    C::AbstractMatrix{Float64};
+    beta::Float64=0.01,
+    max_iter::Int=500,
+    L::Int=1,
+)::AbstractMatrix{Float64}
 
     N1, N2 = size(C)
-	a1 = fill(1.0 / N1, N1)
-	a2 = fill(1.0 / N2, N2)
+    a1 = Device.fill(1.0 / N1, N1)
+    a2 = Device.fill(1.0 / N2, N2)
 
-    P = fill(1.0 / (N1 * N2), N1, N2)
-    K = exp.(-(C ./ beta))
-    Q = similar(P)
-    u = ones(Float64, N1)
-    v = ones(Float64, N2)
-    Qv_buffer = similar(u)
-    QTu_buffer = similar(v)
+    P = Device.fill(1.0 / (N1 * N2), N1, N2)
+    K = exp.(-C ./ beta)
+    u = Device.ones(Float64, N1)
+    v = Device.ones(Float64, N2)
 
     for _ in 1:max_iter
-        @. Q = K * P
+        Q = K .* P
         for _ in 1:L
-            mul!(Qv_buffer, Q, v)
-            @. u = a1 / Qv_buffer
-
-            mul!(QTu_buffer, Q', u)
-            @. v = a2 / QTu_buffer
+            u = a1 ./ (Q * v)
+            v = a2 ./ (Q' * u)
         end
-        @. P = u * Q * v'
+        P = u .* Q .* v'
     end
 
     return P
@@ -56,14 +50,14 @@ end
 
 # Wasserstein (IPOT)
 function wasserstein_distance(
-	ensemble1::CTBMatrix,
-	ensemble2::CTBMatrix;
-    beta::Float64 = 0.01,
-    max_iter::Int = 500,
-    L::Int = 1,
+    ensemble1::CBMatrix,
+    ensemble2::CBMatrix;
+    beta::Float64=0.01,
+    max_iter::Int=500,
+    L::Int=1,
 )::Float64
 
-	C = 1.0 .- abs2.(ensemble1' * ensemble2)
+    C = 1.0 .- abs2.(ensemble1' * ensemble2)
     P = optimal_transport_plan(C; beta, max_iter, L)
 
     return sum(P .* C)
@@ -71,17 +65,18 @@ end
 
 
 function sinkhorn_distance(
-	ensemble1::CTBMatrix,
-	ensemble2::CTBMatrix,
+    ensemble1::CBMatrix,
+    ensemble2::CBMatrix,
 )::Float64
 
-	N1 = size(ensemble1, 2)
-	N2 = size(ensemble2, 2)
-	a1 = ones(Float64, (N1)) / N1
-	a2 = ones(Float64, (N2)) / N2
-	C = 1.0 .- abs2.(ensemble1' * ensemble2)
+    N1 = size(ensemble1, 2)
+    N2 = size(ensemble2, 2)
+    a1 = ones(Float64, (N1)) / N1
+    a2 = ones(Float64, (N2)) / N2
+    C = 1.0 .- abs2.(ensemble1' * ensemble2)
 
-	return sinkhorn_divergence(
+    # [MARK] does not work with CUDA
+    return sinkhorn_divergence(
         a1, a2, C, 0.03; maxiter=1000, atol=rtol = 0, regularization=true,
     )
 end

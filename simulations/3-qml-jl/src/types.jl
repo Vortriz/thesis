@@ -38,7 +38,7 @@ struct ModelArch{C}
         n_ancilla::Int64,
         n_layers::Int64,
         ansatz_builder::Function,
-        collapse_method::CollapseMethod = normal
+        collapse_method::CollapseMethod=normal
     )
         n_qubits = n_data + n_ancilla
         ansatz = ansatz_builder(n_qubits, n_layers)
@@ -59,16 +59,16 @@ struct TrainConfig
     function TrainConfig(;
         dataset_size::Int64,
         batch_size::Int64,
-        target_schedule::Union{Symbol, Vector{Int64}},
+        target_schedule::Union{Symbol,Vector{Int64}},
         epoch_schedule::Vector{Int64},
         optimizer::Optimisers.AbstractRule
     )
         T = length(epoch_schedule)
 
         if target_schedule == :diffusion
-            target_schedule_vec = range(start=T, stop=1, step=-1) |> collect
+            target_schedule_vec = Device.range(start=T, stop=1, step=-1) |> collect
         elseif target_schedule == :direct
-            target_schedule_vec = ones(Int64, T)
+            target_schedule_vec = Device.ones(Int64, T)
         elseif target_schedule isa Vector{Int64}
             if length(target_schedule) != length(epoch_schedule)
                 throw(ArgumentError("target_schedule and epoch_schedule must have the same length"))
@@ -83,8 +83,8 @@ struct TrainConfig
 end
 
 
-export CTBArrayReg, CTBMatrix
+export CBArrayReg, CBMatrix
 
-# ConcreteTransposedBatchedArrayReg
-const CTBArrayReg = BatchedArrayReg{2, ComplexF64, Transpose{ComplexF64, Matrix{ComplexF64}}}
-const CTBMatrix = Union{Matrix{ComplexF64}, LinearAlgebra.Transpose{ComplexF64, Matrix{ComplexF64}}}
+# ConcreteBatchedArrayReg
+const CBArrayReg{T,MT} = BatchedArrayReg{2,T,MT}
+const CBMatrix = AbstractMatrix{ComplexF64}

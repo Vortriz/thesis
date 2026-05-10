@@ -1,10 +1,10 @@
 ### A Pluto.jl notebook ###
-# v0.20.24
+# v0.20.25
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ c77d87a0-4a3c-11f1-b15a-5db1dff58976
+# ╔═╡ 168a33fa-4be8-11f1-937a-99ef8733e91e
 begin
     import Pkg
 
@@ -13,41 +13,35 @@ begin
     Pkg.instantiate()
 end
 
-# ╔═╡ a761dda7-0017-4ca4-bd7e-c9d327df65d0
-# ╠═╡ show_logs = false
+# ╔═╡ b44eecf3-5a0c-43c8-9d80-d547105dceb5
+using CUDA
+
+# ╔═╡ 7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
 begin
-    include("src/base.jl")
-    using .QML
+	include("src/base.jl")
+	using .QML
 end
 
-# ╔═╡ 720275a3-0f9e-49a7-8b4d-2e96f70f1a78
+# ╔═╡ f0dd9925-d3d2-4cad-9b9f-bf11ac792953
 begin
-    using Yao
-    using Random
-    using LinearAlgebra
-    using CairoMakie
-    using StatsBase
-    import Zygote
-    import Optimisers
+	using Yao
+	using Random
+	using LinearAlgebra
+	using CairoMakie
+	using StatsBase
+	import Zygote
+	import Optimisers
 
-    using ProgressLogging
-    using BenchmarkTools
-    using JET
-    using ProfilePerfetto
+	using ProgressLogging
+	# using BenchmarkTools
+	# using JET
+	# using ProfilePerfetto
 end
 
-# ╔═╡ f87a8c67-a279-49d8-b20f-c2a5a07423a8
+# ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    using YaoPlots
-    YaoPlots.darktheme!()
-end
-
-# ╔═╡ 0dc82d60-ad67-4cd1-a501-b9ecea612984
-const rng = MersenneTwister(1234)
-
-# ╔═╡ 7e386bf9-3d9e-4852-b7cf-67f2b3ef2f61
-begin
-    T = 2
+    const T = 2
+	const rng = MersenneTwister(1234)
     arch = ModelArch(
         n_data=5,
         n_ancilla=2,
@@ -71,16 +65,17 @@ begin
         n_samples=config.dataset_size,
     )
     initial_ensemble = gen_dist(
-        Val(haar);
+        Val(haar),
+		rng;
         n_qubits=arch.n_data,
         n_samples=config.batch_size,
     )
 end;
 
-# ╔═╡ 4c5794a9-c5e1-46f8-84b6-195d91fe63d7
+# ╔═╡ 0c83c042-7de8-4b61-a041-59d39f9d61bd
 plot_bloch_sphere(target_ensemble)
 
-# ╔═╡ f845e549-9e6d-4d25-b379-55ecafa7c559
+# ╔═╡ 1af82bcf-1787-403e-a4c8-8bc59f1bd995
 function train(
     arch::ModelArch,
     config::TrainConfig,
@@ -106,14 +101,23 @@ function train(
                 config.batch_size,
                 replace=false,
             )
-            target_batch = @view target_matrix[:, target_indices]
+            target_batch = target_matrix[:, target_indices]
 
-            loss, grads = loss_and_grads(
-                arch,
-                current_params,
-                current_ensemble,
-                target_batch,
-            )
+            loss, grads = Zygote.withgradient(current_params) do p
+	            collapsed_ensemble_matrix = apply_pqc(
+	                arch,
+	                current_ensemble,
+	                p,
+	            )
+	
+	            C = 1.0 .- abs2.(target_batch' * collapsed_ensemble_matrix)
+	
+	            Γ = Zygote.ignore() do
+	                optimal_transport_plan(C)
+	            end
+	
+	            return dot(Γ, C)
+	        end
 
             Optimisers.update!(opt_state, current_params, grads[1])
             loss_history[t][epoch] = loss
@@ -123,7 +127,7 @@ function train(
                                arch,
                                current_ensemble,
                                current_params,
-                           ) |> BatchedArrayReg |> transpose_storage
+                           ) |> batch_and_normalize
 
         params[:, t] = current_params
     end
@@ -131,36 +135,30 @@ function train(
     return loss_history, params
 end
 
-# ╔═╡ b5b829f9-931e-451c-b734-ff5c8bff8eec
+# ╔═╡ de779e94-a981-4020-a5d8-ef25ba701015
 begin
-    target_trajectory = [target_ensemble, initial_ensemble]
+    target_trajectory::Vector{CBArrayReg} = [target_ensemble, initial_ensemble]
     loss_history, trained_params = train(arch, config, target_trajectory)
 end
 
-# ╔═╡ 99df8fa2-8bff-4ba6-8dfd-4fe892815962
-generated_ensemble = inference(
-    arch,
-    config,
-    initial_ensemble,
-    trained_params,
+# ╔═╡ eca56e03-c725-4792-9032-7d4738706f0e
+target_trajectory[1] |> typeof <: CBArrayReg
+
+# ╔═╡ bf97557d-ceb0-4e2c-b5ea-cdbf71bc263e
+apply_pqc(
+	arch,
+	curand_state(arch.n_qubits; nbatch=config.batch_size),
+	rand(Float64, arch.n_params_ppb)
 )
 
-# ╔═╡ da5377db-aa38-4852-9062-ed7b888c0738
-plot_bloch_sphere(generated_ensemble)
-
-# ╔═╡ 55881a2c-598c-48f2-b4fa-eab7e96a9ba4
-plot_loss_history(loss_history)
-
 # ╔═╡ Cell order:
-# ╟─c77d87a0-4a3c-11f1-b15a-5db1dff58976
-# ╠═a761dda7-0017-4ca4-bd7e-c9d327df65d0
-# ╠═720275a3-0f9e-49a7-8b4d-2e96f70f1a78
-# ╟─f87a8c67-a279-49d8-b20f-c2a5a07423a8
-# ╟─0dc82d60-ad67-4cd1-a501-b9ecea612984
-# ╠═7e386bf9-3d9e-4852-b7cf-67f2b3ef2f61
-# ╠═4c5794a9-c5e1-46f8-84b6-195d91fe63d7
-# ╠═f845e549-9e6d-4d25-b379-55ecafa7c559
-# ╠═b5b829f9-931e-451c-b734-ff5c8bff8eec
-# ╠═99df8fa2-8bff-4ba6-8dfd-4fe892815962
-# ╠═da5377db-aa38-4852-9062-ed7b888c0738
-# ╠═55881a2c-598c-48f2-b4fa-eab7e96a9ba4
+# ╟─168a33fa-4be8-11f1-937a-99ef8733e91e
+# ╠═b44eecf3-5a0c-43c8-9d80-d547105dceb5
+# ╠═7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
+# ╠═f0dd9925-d3d2-4cad-9b9f-bf11ac792953
+# ╠═7479301c-85c0-4773-bc5d-1195c7cb47ad
+# ╠═0c83c042-7de8-4b61-a041-59d39f9d61bd
+# ╠═1af82bcf-1787-403e-a4c8-8bc59f1bd995
+# ╠═de779e94-a981-4020-a5d8-ef25ba701015
+# ╠═eca56e03-c725-4792-9032-7d4738706f0e
+# ╠═bf97557d-ceb0-4e2c-b5ea-cdbf71bc263e

@@ -1,10 +1,10 @@
 export collapse
 
 function collapse(
-	::Val{alternate},
+    ::Val{alternate},
     arch::ModelArch,
-	ensemble::CTBArrayReg,
-)::Matrix{ComplexF64}
+    ensemble::CBArrayReg,
+)::CBMatrix
 
     n_data = arch.n_data
     n_ancilla = arch.n_ancilla
@@ -29,29 +29,29 @@ function collapse(
 end
 
 function collapse(
-	::Val{normal},
-	arch::ModelArch,
-	ensemble::CTBArrayReg,
-)::Matrix{ComplexF64}
+    ::Val{normal},
+    arch::ModelArch,
+    ensemble::CBArrayReg,
+)::CBMatrix
 
     n_data = arch.n_data
     n_ancilla = arch.n_ancilla
-	batch_size = ensemble.nbatch
-	n_a_dim = 1 << n_ancilla
-	n_d_dim = 1 << n_data
+    batch_size = ensemble.nbatch
+    n_a_dim = 1 << n_ancilla
+    n_d_dim = 1 << n_data
 
-	indices::Vector{Int64} = Zygote.ignore() do
-		col_offsets = (0:batch_size-1) .* n_a_dim
-		# Measure HIGHER bits (the data bits)
-		res = measure(ensemble, (n_data+1):(n_data+n_ancilla))
-		vec(Int.(res)) .+ 1 .+ col_offsets
-	end
+    indices::Vector{Int64} = Zygote.ignore() do
+        col_offsets = (0:batch_size-1) .* n_a_dim
+        # Measure HIGHER bits (the data bits)
+        res = measure(ensemble, (n_data+1):(n_data+n_ancilla))
+        vec(Int.(res)) .+ 1 .+ col_offsets
+    end
 
-	state_2d = reshape(ensemble.state, n_d_dim, :)
-	collapsed_state = state_2d[:, indices]
+    state_2d = reshape(ensemble.state, n_d_dim, :)
+    collapsed_state = state_2d[:, indices]
 
-	probs = sum(abs2, collapsed_state, dims=1)
-	return collapsed_state ./ sqrt.(probs .+ 1e-12)
+    probs = sum(abs2, collapsed_state, dims=1)
+    return collapsed_state ./ sqrt.(probs .+ 1e-12)
 end
 
 
@@ -61,27 +61,27 @@ function scramble(
     arch::ModelArch,
     config::TrainConfig,
     rng::AbstractRNG,
-    ensemble::CTBArrayReg;
+    ensemble::CBArrayReg;
     weight_schedule::Vector{Float64},
-)::Vector{CTBArrayReg}
+)::Vector{CBArrayReg}
 
     n_qubits = arch.n_data
     circuit = scramble_circuit(n_qubits)
 
-    trajectory = Vector{CTBArrayReg}(undef, config.T + 1)
+    trajectory = Vector{CBArrayReg}(undef, config.T + 1)
     trajectory[1] = copy(ensemble)
 
     for t in 1:config.T
         current_ensemble = copy(ensemble)
 
-        for s in 1:config.dataset_size
+        for s in 1:ensemble.nbatch
             reg = viewbatch(current_ensemble, s)
             # Run through all steps up to the current timestep t
             for prev_t in 1:t
                 # Generate random parameters scaled by the weight schedule for this step
                 params = vcat(
-                    weight_schedule[prev_t] .* (rand(rng, n_qubits * 3) .* (pi/4) .- (pi/8)),
-                    weight_schedule[prev_t] .* (rand(rng, binomial(n_qubits, 2)) .* 0.2 .+ 0.4) ./ (2.0 * sqrt(n_qubits))
+                    weight_schedule[prev_t] .* (rand(rng, Float64, n_qubits * 3) .* (pi / 4) .- (pi / 8)),
+                    weight_schedule[prev_t] .* (rand(rng, Float64, binomial(n_qubits, 2)) .* 0.2 .+ 0.4) ./ (2.0 * sqrt(n_qubits))
                 )
 
                 dispatch!(circuit, params)
@@ -98,8 +98,15 @@ end
 
 export batch_and_normalize
 
-function batch_and_normalize(ensemble::Matrix{ComplexF64})::CTBArrayReg
+function batch_and_normalize(ensemble::Matrix{ComplexF64})::CBArrayReg
     reg = ensemble |> BatchedArrayReg |> transpose_storage
+    normalize!(reg)
+
+    return reg
+end
+
+function batch_and_normalize(ensemble::CuMatrix{ComplexF64})::CBArrayReg
+    reg = ensemble |> BatchedArrayReg
     normalize!(reg)
 
     return reg
@@ -109,48 +116,48 @@ end
 export apply_pqc
 
 function apply_pqc(
-	arch::ModelArch,
-	input_ensemble::CTBArrayReg,
-	params::Vector{Float64},
+    arch::ModelArch,
+    input_ensemble::CBArrayReg,
+    params::Vector{Float64},
 )
-	output_ensemble = apply(
-		input_ensemble,
-		dispatch(arch.ansatz, params),
-	)
+    output_ensemble = apply(
+        input_ensemble,
+        dispatch(arch.ansatz, params),
+    )
 
-	collapsed_ensemble_matrix = collapse(
-		arch.collapse_method,
-		arch,
-		output_ensemble,
-	)
+    collapsed_ensemble_matrix = collapse(
+        arch.collapse_method,
+        arch,
+        output_ensemble,
+    )
 
-	return collapsed_ensemble_matrix
+    return collapsed_ensemble_matrix
 end
 
 
 export loss_and_grads
 
 function loss_and_grads(
-	arch::ModelArch,
-	params::Vector{Float64},
-	input_ensemble::CTBArrayReg,
-	target_matrix::AbstractMatrix{ComplexF64},
+    arch::ModelArch,
+    params::Vector{Float64},
+    input_ensemble::CBArrayReg,
+    target_matrix::AbstractMatrix{ComplexF64},
 )
-	return (
-		Zygote.withgradient(params) do p
-			collapsed_ensemble_matrix = apply_pqc(
-				arch,
-				input_ensemble,
-				p,
-			)
+    return (
+        Zygote.withgradient(params) do p
+            collapsed_ensemble_matrix = apply_pqc(
+                arch,
+                input_ensemble,
+                p,
+            )
 
-			C = 1.0 .- abs2.(target_matrix' * collapsed_ensemble_matrix)
+            C = 1.0 .- abs2.(target_matrix' * collapsed_ensemble_matrix)
 
-			Γ = Zygote.ignore() do
-				optimal_transport_plan(C)
-			end
+            Γ = Zygote.ignore() do
+                optimal_transport_plan(C)
+            end
 
-			return dot(Γ, C)
-		end
-	)
+            return dot(Γ, C)
+        end
+    )
 end

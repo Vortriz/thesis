@@ -1,30 +1,31 @@
 export plot_bloch_sphere, plot_loss_history, plot_scrambling_decay
 
-function plot_bloch_sphere(ensemble::CTBArrayReg)
-	n_samples, dims = ensemble.state.parent.size
-	if dims != 2
-   	    @info "Plotting on Bloch sphere is only available for 1 qubit system."
-		return
-	end
+function plot_bloch_sphere(ensemble::CBArrayReg)
+    ensemble = ensemble |> cpu
+    dims, n_samples = ensemble.state.size
+    if dims != 2
+        @info "Plotting on Bloch sphere is only available for 1 qubit system."
+        return
+    end
 
     b = Bloch()
-	points = zeros(Float64, (3, n_samples))
+    points = zeros(Float64, (3, n_samples))
 
-	for (i, s) in ensemble.state |> eachcol |> enumerate
-		s = s[1] * basis(2, 0) + s[2] * basis(2, 1)
-		points[:, i] = [expect(sigmax(), s), expect(sigmay(), s), expect(sigmaz(), s)] |> real
-	end
+    for (i, s) in ensemble.state |> eachcol |> enumerate
+        s = s[1] * basis(2, 0) + s[2] * basis(2, 1)
+        points[:, i] = [expect(sigmax(), s), expect(sigmay(), s), expect(sigmaz(), s)] |> real
+    end
 
     add_points!(b, points)
-	b.point_size = [3]
+    b.point_size = [3]
     fig, _ = render(b)
 
     # To make the plot square and remove axes
     # ax = Axis(fig[1, 1], aspect=1)
-	# hidedecorations!(ax)
-	# hidespines!(ax)
-	# colsize!(fig.layout, 1, Aspect(1, 1.0))
-	# resize_to_layout!(fig)
+    # hidedecorations!(ax)
+    # hidespines!(ax)
+    # colsize!(fig.layout, 1, Aspect(1, 1.0))
+    # resize_to_layout!(fig)
 
     return fig
 end
@@ -33,8 +34,8 @@ function plot_loss_history(loss_history::Vector{Vector{Float64}})
     fig = Figure()
     ax = Axis(
         fig[1, 1],
-        xlabel = "Iterations",
-        ylabel = "Loss";
+        xlabel="Iterations",
+        ylabel="Loss";
     )
     ax.yticks = 0:0.2:1
 
@@ -58,14 +59,14 @@ end
 function plot_scrambling_decay(
     arch::ModelArch,
     config::TrainConfig;
-    trajectory::Vector{CTBArrayReg},
+    trajectory::Vector{CBArrayReg},
     metric::Function
 )
-	rand_ensemble = gen_dist(
-		Val(haar);
-		n_qubits=arch.n_data,
-		n_samples=config.dataset_size,
-	)
+    rand_ensemble = gen_dist(
+        Val(haar);
+        n_qubits=arch.n_data,
+        n_samples=config.dataset_size,
+    )
 
     distances = Float64[]
     for ensemble in trajectory
@@ -76,11 +77,11 @@ function plot_scrambling_decay(
 
     fig = Figure()
     ax = Axis(
-		fig[1, 1],
-		xlabel = "t",
-		ylabel = "$metric_name \n (wrt Random Ensemble)",
-		title = "Scrambling Decay ($metric_name)"
-	)
+        fig[1, 1],
+        xlabel="t",
+        ylabel="$metric_name \n (wrt Random Ensemble)",
+        title="Scrambling Decay ($metric_name)"
+    )
     ax.xgridvisible = false
     ax.ygridvisible = false
     ax.yticks = 0:0.2:1
