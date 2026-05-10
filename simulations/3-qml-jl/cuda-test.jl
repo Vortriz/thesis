@@ -13,10 +13,8 @@ begin
     Pkg.instantiate()
 end
 
-# ╔═╡ b44eecf3-5a0c-43c8-9d80-d547105dceb5
-using CUDA
-
 # ╔═╡ 7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
+# ╠═╡ show_logs = false
 begin
 	include("src/base.jl")
 	using .QML
@@ -40,27 +38,27 @@ end
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    const T = 6
+    const T = 3
 	const rng = MersenneTwister(1234)
     arch = ModelArch(
-        n_data=8,
+        n_data=4,
         n_ancilla=4,
-        n_layers=6,
+        n_layers=3,
         ansatz_builder=EHA,
-        collapse_method=alternate,
+        collapse_method=normal,
     )
 
     config = TrainConfig(
         dataset_size=1000,
         batch_size=100,
         target_schedule=:direct,
-        epoch_schedule=[300, 600, 600, 600, 600, 600],
-        optimizer=Optimisers.AMSGrad(0.1),
+        epoch_schedule=fill(300, T),
+        optimizer=Optimisers.AMSGrad(0.05),
     )
 
     target_ensemble = gen_dist(
         Val(clustered),
-        rng;
+		rng;
         n_qubits=arch.n_data,
         n_samples=config.dataset_size,
     )
@@ -149,7 +147,6 @@ plot_loss_history(loss_history)
 
 # ╔═╡ Cell order:
 # ╟─168a33fa-4be8-11f1-937a-99ef8733e91e
-# ╠═b44eecf3-5a0c-43c8-9d80-d547105dceb5
 # ╠═7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
 # ╠═f0dd9925-d3d2-4cad-9b9f-bf11ac792953
 # ╠═7479301c-85c0-4773-bc5d-1195c7cb47ad
