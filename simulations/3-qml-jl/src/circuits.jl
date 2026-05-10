@@ -7,16 +7,16 @@ function scramble_circuit(n_qubits::Int64)::ChainBlock{2}
     register = 1:n_qubits
     circuit = chain(n_qubits)
 
-    push!(
-        circuit,
-        chain(n_qubits, put(i => chain(Rx(0), Ry(0), Rx(0))) for i in register),
-    )
+    for i in register
+        push!(circuit, put(i => Rx(0)))
+        push!(circuit, put(i => Ry(0)))
+        push!(circuit, put(i => Rx(0)))
+    end
 
     RZZ_combinations = combinations(register, 2)
-    push!(
-        circuit,
-        chain(RZZ(n_qubits, i, j) for (i, j) in collect(RZZ_combinations))
-    )
+    for (i, j) in RZZ_combinations
+        push!(circuit, RZZ(n_qubits, i, j))
+    end
 
     return circuit
 end
@@ -33,11 +33,15 @@ function HEA(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
         [(i, mod1(i + 1, n_qubits)) for i in register]
     end
 
-    layer = chain(
-        n_qubits,
-        chain(put(i => chain(Rx(0), Ry(0))) for i in register),
-        chain(cz(i, j) for (i, j) in entangle_pairs),
-    )
+    layer = chain(n_qubits)
+    for i in register
+        push!(layer, put(i => Rx(0)))
+        push!(layer, put(i => Ry(0)))
+    end
+
+    for (i, j) in entangle_pairs
+        push!(layer, cz(i, j))
+    end
 
     return layer^n_layers
 end
@@ -62,11 +66,16 @@ Uₑₙₜ(i::Int64) = chain(XX(i), YY(i), ZZ(i))
 function EHA(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
     register = 1:n_qubits
 
-    layer = chain(
-        n_qubits,
-        chain(put(i => chain(Rz(0), Ry(0), Rz(0))) for i in register),
-        chain(Uₑₙₜ(i) for i in 1:n_qubits-1),
-    )
+    layer = chain(n_qubits)
+    for i in register
+        push!(layer, put(i => Rz(0)))
+        push!(layer, put(i => Ry(0)))
+        push!(layer, put(i => Rz(0)))
+    end
+
+    for i in 1:n_qubits-1
+        push!(layer, Uₑₙₜ(i))
+    end
 
     return layer^n_layers
 end
