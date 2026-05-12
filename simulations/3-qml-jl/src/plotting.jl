@@ -30,14 +30,24 @@ function plot_bloch_sphere(ensemble::CBArrayReg)
     return fig
 end
 
-function plot_loss_history(loss_history::Vector{Vector{Float64}})
+function plot_loss_history(
+    loss_history::Vector{Vector{Float64}};
+    yscale::Function=identity,
+)
     fig = Figure()
     ax = Axis(
         fig[1, 1],
+        yscale = yscale,
         xlabel="Iterations",
         ylabel="Loss";
     )
-    ax.yticks = 0:0.2:1
+    # ax.yticks = 0:0.1:1
+
+    if yscale == log10
+        ylims!(ax, 1e-3, 1)
+    else
+        ylims!(ax, 0, 1)
+    end
 
     iter_schedule = length.(loss_history)
     x = cumsum(iter_schedule)
@@ -50,27 +60,21 @@ function plot_loss_history(loss_history::Vector{Vector{Float64}})
             loss_history[t]
         )
     end
-    ylims!(ax, 0, 1)
 
     return fig
 
 end
 
-function plot_scrambling_decay(
-    arch::ModelArch,
-    config::TrainConfig;
+function plot_trajectory_convergence(;
     trajectory::Vector{CBArrayReg},
-    metric::Function
+    target_ensemble::CBArrayReg,
+    metric::Function,
+    yscale::Function=identity,
+    plot_title::String,
 )
-    rand_ensemble = gen_dist(
-        Val(haar);
-        n_qubits=arch.n_data,
-        n_samples=config.dataset_size,
-    )
-
     distances = Float64[]
     for ensemble in trajectory
-        push!(distances, metric(ensemble.state, rand_ensemble.state))
+        push!(distances, metric(ensemble.state, target_ensemble.state))
     end
 
     metric_name = string(nameof(metric))
@@ -78,57 +82,23 @@ function plot_scrambling_decay(
     fig = Figure()
     ax = Axis(
         fig[1, 1],
+        yscale = yscale,
         xlabel="t",
-        ylabel="$metric_name \n (wrt Random Ensemble)",
-        title="Scrambling Decay ($metric_name)"
+        ylabel="$metric_name \n (wrt Target Ensemble)",
+        title=plot_title,
     )
     ax.xgridvisible = false
     ax.ygridvisible = false
     ax.yticks = 0:0.2:1
-    ylims!(ax, 0, 1)
+    if yscale == log10
+        ylims!(ax, 1e-3, 1)
+    else
+        ylims!(ax, 0, 1)
+    end
 
-    scatter!(ax, 0:config.T, distances)
-
+    scatter!(ax, 0:length(distances)-1, distances)
     return fig
 end
-
-# function plot_eval_loss_history(
-#     model::Model,
-#     strategy::TrainingStrategy,
-#     backward_states::OffsetEnsembleCollection
-# )
-#     fig = Figure()
-#     ax = Axis(
-#         fig[1, 1],
-#         # yscale = log10
-#         xlabel = "t",
-#         ylabel = "Loss",
-#         title = "Eval Loss History ($(strategy.loss_function |> nameof))",
-#     )
-#     ax.xticks = 0:model.T
-#     ax.yticks = 0:0.2:1
-
-#     distances = Vector{Float64}()
-
-#     for ensemble in backward_states |> OffsetArrays.no_offset_view |> eachcol
-#         push!(
-#             distances,
-#             strategy.loss_function(
-#                 ensemble |> Ensemble,
-#                 model.forward_ensembles[1:100, 0] |> Ensemble,
-#             ),
-#         )
-#     end
-
-#     reverse!(distances)
-
-#     scatter!(ax, (0:model.T), distances)
-#     ylims!(ax, 0, 1)
-
-#     @show distances
-
-#     return fig
-# end
 
 # function plot_qkr_localization(model::Model, states::Ensemble)
 #     n = length(states)

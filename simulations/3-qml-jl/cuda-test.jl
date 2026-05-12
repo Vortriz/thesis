@@ -38,13 +38,13 @@ end
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    const T = 3
+    const T = 2
 	const rng = MersenneTwister(1234)
     arch = ModelArch(
-        n_data=4,
-        n_ancilla=4,
-        n_layers=3,
-        ansatz_builder=EHA,
+        n_data=1,
+        n_ancilla=1,
+        n_layers=2,
+        ansatz_builder=HEA,
         collapse_method=normal,
     )
 
@@ -53,7 +53,7 @@ begin
         batch_size=100,
         target_schedule=:direct,
         epoch_schedule=fill(300, T),
-        optimizer=Optimisers.AMSGrad(0.05),
+        optimizer=Optimisers.AMSGrad(0.01),
     )
 
     target_ensemble = gen_dist(
@@ -137,13 +137,32 @@ end
 begin
     target_trajectory::Vector{CBArrayReg} = [target_ensemble, initial_ensemble]
     loss_history, params = train(arch, config, target_trajectory)
-end
+end;
 
 # ╔═╡ eca56e03-c725-4792-9032-7d4738706f0e
 target_trajectory[1] |> typeof
 
 # ╔═╡ e7010f58-8607-4bd6-97d2-b0a3a668bbb5
-plot_loss_history(loss_history)
+plot_loss_history(loss_history; yscale=log10)
+
+# ╔═╡ 35cf75a2-ada9-4167-b273-8b0f8351a78a
+loss_history[end][end-20:end] |> mean
+
+# ╔═╡ c0c82792-abd4-48b4-8fe2-d913c60d1e92
+generated_trajectory = inference(
+	arch,
+	config,
+	gen_dist(
+		Val(haar),
+		rng;
+		n_qubits=arch.n_data,
+		n_samples=config.batch_size,
+	),
+	params,
+)
+
+# ╔═╡ dcdba0ce-8b94-4d38-8e9e-980070e155e0
+plot_bloch_sphere(generated_trajectory[end])
 
 # ╔═╡ Cell order:
 # ╟─168a33fa-4be8-11f1-937a-99ef8733e91e
@@ -155,3 +174,6 @@ plot_loss_history(loss_history)
 # ╠═de779e94-a981-4020-a5d8-ef25ba701015
 # ╠═eca56e03-c725-4792-9032-7d4738706f0e
 # ╠═e7010f58-8607-4bd6-97d2-b0a3a668bbb5
+# ╠═35cf75a2-ada9-4167-b273-8b0f8351a78a
+# ╠═c0c82792-abd4-48b4-8fe2-d913c60d1e92
+# ╠═dcdba0ce-8b94-4d38-8e9e-980070e155e0

@@ -21,9 +21,9 @@ end
 # Based on https://github.com/xieyujia/IPOT/blob/master/ipot.py
 function optimal_transport_plan(
     C::AbstractMatrix{Float64};
-    beta::Float64=0.01,
+    β::Float64=0.05,
     max_iter::Int=500,
-    L::Int=1,
+    L::Int=3,
 )::AbstractMatrix{Float64}
 
     N1, N2 = size(C)
@@ -31,7 +31,7 @@ function optimal_transport_plan(
     a2 = Device.fill(1.0 / N2, N2)
 
     P = Device.fill(1.0 / (N1 * N2), N1, N2)
-    K = exp.(-(C ./ beta))
+    K = exp.(-C ./ β)
     Q = similar(P)
     u = Device.ones(Float64, N1)
     v = Device.ones(Float64, N2)
@@ -58,31 +58,13 @@ end
 function wasserstein_distance(
     ensemble1::CBMatrix,
     ensemble2::CBMatrix;
-    beta::Float64=0.01,
+    β::Float64=0.05,
     max_iter::Int=500,
-    L::Int=1,
+    L::Int=3,
 )::Float64
 
     C = 1.0 .- abs2.(ensemble1' * ensemble2)
-    P = optimal_transport_plan(C; beta, max_iter, L)
+    P = optimal_transport_plan(C; β, max_iter, L)
 
     return sum(P .* C)
-end
-
-
-function sinkhorn_distance(
-    ensemble1::CBMatrix,
-    ensemble2::CBMatrix,
-)::Float64
-
-    N1 = size(ensemble1, 2)
-    N2 = size(ensemble2, 2)
-    a1 = ones(Float64, (N1)) / N1
-    a2 = ones(Float64, (N2)) / N2
-    C = 1.0 .- abs2.(ensemble1' * ensemble2)
-
-    # [MARK] does not work with CUDA
-    return sinkhorn_divergence(
-        a1, a2, C, 0.03; maxiter=1000, atol=rtol = 0, regularization=true,
-    )
 end

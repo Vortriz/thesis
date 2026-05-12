@@ -5,8 +5,10 @@ function inference(
     config::TrainConfig,
     initial_ensemble::CBArrayReg,
     params::Matrix{Float64}
-)::CBArrayReg
+)::Vector{CBArrayReg}
 
+    trajectory = Vector{CBArrayReg}(undef, config.T + 1)
+    trajectory[1] = copy(initial_ensemble)
     current_ensemble = copy(initial_ensemble)
 
     for t in 1:config.T
@@ -17,7 +19,9 @@ function inference(
             current_ensemble,
             params[:, t],
         ) |> batch_and_normalize
+
+        trajectory[t+1] = copy(current_ensemble)
     end
 
-    return current_ensemble
+    return trajectory
 end

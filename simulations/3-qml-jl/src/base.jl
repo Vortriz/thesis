@@ -6,13 +6,12 @@ using LinearAlgebra
 using Statistics
 
 using Yao
-using Zygote
+import Zygote
 import Optimisers
 
 using Combinatorics
-using Bessels
+using Bessels: besselj
 using StatsBase
-using OptimalTransport
 using JLD2
 
 using LaTeXStrings
@@ -32,6 +31,7 @@ const StorageType = CUDA.functional() ? CuArray : Array
 include("types.jl")
 include("circuits.jl")
 include("utils.jl")
+include("helpers.jl")
 include("losses.jl")
 include("distributions.jl")
 include("inference.jl")
