@@ -4,16 +4,11 @@ result*
 .pre-commit-config.yaml
 
 # Python
-.venv
+**/.venv
 **/__marimo__/session
 **/__marimo__/cache
 **/__pycache__
-.ruff_cache
-
-# Quarto
-.quarto/
-**/*.quarto_ipynb
-_extensions/
+**/.ruff_cache
 
 # SLURM
 **/job*.err

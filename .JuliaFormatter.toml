@@ -1,0 +1,7 @@
+always_for_in = true
+whitespace_typedefs = true
+always_use_return = true
+whitespace_in_kwargs = false
+format_docstrings = true
+join_lines_based_on_source = true
+separate_kwargs_with_semicolon = true

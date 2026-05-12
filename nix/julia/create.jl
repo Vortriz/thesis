@@ -14,7 +14,9 @@ end"""
 function parse_commandline()
     s = ArgParseSettings()
     @add_arg_table s begin
-        "file"
+        """
+        file
+        """
         help = "name of the file to create"
         required = true
     end
@@ -30,7 +32,7 @@ function main()
 
     save_notebook(Notebook([Cell(template)]), file)
 
-    run(notebook = file)
+    return run(; notebook=file)
 end
 
 main()
