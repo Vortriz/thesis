@@ -31,9 +31,29 @@ begin
     import Optimisers
 
     using ProgressLogging
+	using MLFlowClient
+    import JLSO
+
+	import Dates
+	import Logging
+
     # using BenchmarkTools
     # using JET
     # using ProfilePerfetto
+end
+
+# ╔═╡ e7f9dfca-dfd8-4b44-bfeb-91107e281b10
+# ╠═╡ show_logs = false
+begin
+	mlf = MLFlow("http://localhost:5000")
+	exp_name = "QML_Training"
+	exp = try
+        createexperiment(mlf, exp_name)
+    catch e
+        getexperimentbyname(mlf, exp_name)
+    end
+    mlf_run = createrun(mlf, exp;
+						run_name=Dates.format(Dates.now(), "yyyy-mm-dd @ HH:MM:SS"))
 end
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
@@ -69,21 +89,24 @@ begin
         optimizer=Optimisers.AMSGrad(0.01),
     )
 
-end;
+    logbatch(mlf, mlf_run; params=get_hyperparams(arch, config, rng))
 
-# ╔═╡ 0c83c042-7de8-4b61-a041-59d39f9d61bd
-plot_bloch_sphere(target_ensemble)
+end;
 
 # ╔═╡ 1af82bcf-1787-403e-a4c8-8bc59f1bd995
 function train(
     arch::ModelArch,
-    config::TrainConfig,
+    config::TrainConfig;
+    mlf::Union{MLFlow, Nothing} = nothing,
+    mlf_run::Union{Run, Nothing} = nothing
 )
     params = rand(rng, Float64, (arch.n_params_ppb, config.T))
     loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
 
     model_state = ModelState()
     model_state.current_ensemble = config.initial_ensemble |> copy
+
+    global_step = 0
 
     @progress for t in 1:config.T
         append_qubits!(model_state.current_ensemble, arch.n_ancilla)
@@ -95,6 +118,7 @@ function train(
         target_matrix = config.target_trajectory[target_idx].state
 
         @progress for epoch in 1:config.epoch_schedule[t]
+            global_step += 1
             target_indices = sample(
                 1:config.dataset_size,
                 config.batch_size,
@@ -106,6 +130,10 @@ function train(
 
             Optimisers.update!(opt_state, model_state.current_params, grads[1])
             loss_history[t][epoch] = loss
+
+            if !isnothing(mlf) && !isnothing(mlf_run)
+                logmetric(mlf, mlf_run, "training_loss", loss; step=global_step)
+            end
         end
 
         model_state.current_ensemble =
@@ -122,39 +150,87 @@ function train(
 end
 
 # ╔═╡ de779e94-a981-4020-a5d8-ef25ba701015
-loss_history, params = train(arch, config)
+begin
+    loss_history, params = train(arch, config; mlf=mlf, mlf_run=mlf_run)
+    final_training_loss = get_final_training_loss(loss_history)
 
-# ╔═╡ 4f4c1a18-5b37-4f4a-9d78-a07f3cc51c68
-arch.collapse_method
+    logmetric(mlf, mlf_run, "final_training_loss", final_training_loss)
+
+	io = IOBuffer()
+	JLSO.save(io, :params => params)
+	bytes = take!(io)
+    uploadartifact(mlf, "params.jld2", bytes)
+
+    @show final_training_loss
+end
+
+# ╔═╡ 0b68baca-e370-466a-a3aa-6785d62b9736
+function plot_to_bytes(fig)
+	io = IOBuffer()
+	show(io, MIME"image/svg+xml"(), fig)
+	return take!(io)
+end
+
+# ╔═╡ 0c83c042-7de8-4b61-a041-59d39f9d61bd
+begin
+	fig_target_bloch = plot_bloch_sphere(target_ensemble)
+	if !isnothing(fig_target_bloch)
+    	uploadartifact(mlf, "target_bloch_sphere.svg", plot_to_bytes(fig_target_bloch))
+	end
+    fig_target_bloch
+end
 
 # ╔═╡ e7010f58-8607-4bd6-97d2-b0a3a668bbb5
-plot_loss_history(loss_history; yscale=log10)
+begin
+	fig_loss = plot_loss_history(loss_history; yscale=log10)
+    uploadartifact(mlf, "loss_plot.svg", plot_to_bytes(fig_loss))
+	fig_loss
+end
 
 # ╔═╡ c0c82792-abd4-48b4-8fe2-d913c60d1e92
-generated_trajectory = inference(
-    arch,
-    config,
-    gen_dist(
-        Val(haar),
-        rng;
-        n_qubits=arch.n_data,
-        n_samples=config.batch_size,
-    ),
-    params,
-);
+begin
+	generated_trajectory = inference(
+	    arch,
+	    config,
+	    gen_dist(
+	        Val(haar),
+	        rng;
+	        n_qubits=arch.n_data,
+	        n_samples=config.batch_size,
+	    ),
+	    params,
+	);
+
+	inf_loss = wasserstein_distance(
+		generated_trajectory[end].state,
+		target_ensemble.state,
+	)
+    logmetric(mlf, mlf_run, "inference_loss", inf_loss)
+    @show inf_loss
+end
 
 # ╔═╡ dcdba0ce-8b94-4d38-8e9e-980070e155e0
-plot_bloch_sphere(generated_trajectory[end])
+begin
+	fig_generated_bloch = plot_bloch_sphere(generated_trajectory[end])
+	if !isnothing(fig_generated_bloch)
+    	uploadartifact(mlf, "generated_bloch_sphere.svg", plot_to_bytes(fig_generated_bloch))
+	end
+
+	updaterun(mlf, mlf_run; status=RunStatus.FINISHED)
+
+	fig_generated_bloch
+end
 
 # ╔═╡ Cell order:
 # ╟─168a33fa-4be8-11f1-937a-99ef8733e91e
 # ╠═7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
 # ╠═f0dd9925-d3d2-4cad-9b9f-bf11ac792953
+# ╠═e7f9dfca-dfd8-4b44-bfeb-91107e281b10
 # ╠═7479301c-85c0-4773-bc5d-1195c7cb47ad
 # ╠═0c83c042-7de8-4b61-a041-59d39f9d61bd
-# ╟─1af82bcf-1787-403e-a4c8-8bc59f1bd995
+# ╠═1af82bcf-1787-403e-a4c8-8bc59f1bd995
 # ╠═de779e94-a981-4020-a5d8-ef25ba701015
-# ╠═4f4c1a18-5b37-4f4a-9d78-a07f3cc51c68
+# ╠═0b68baca-e370-466a-a3aa-6785d62b9736
 # ╠═e7010f58-8607-4bd6-97d2-b0a3a668bbb5
 # ╠═c0c82792-abd4-48b4-8fe2-d913c60d1e92
 # ╠═dcdba0ce-8b94-4d38-8e9e-980070e155e0

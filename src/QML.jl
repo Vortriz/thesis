@@ -34,6 +34,7 @@ const StorageType = CUDA.functional() ? CuArray : Array
 
 # Order is important
 include("types.jl")
+include("mlflow.jl")
 include("circuits.jl")
 include("utils.jl")
 include("helpers.jl")
