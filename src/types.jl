@@ -31,7 +31,7 @@ const CBMatrix = AbstractMatrix{ComplexF64}
 
 export ModelArch, TrainConfig, ModelState
 
-struct ModelArch{C}
+struct ModelArch{CM}
     n_data::Int64
     n_ancilla::Int64
     n_qubits::Int64
@@ -39,7 +39,7 @@ struct ModelArch{C}
     ansatz::ChainBlock{2}
     ansatz_name::String
     n_params_ppb::Int64 # Number of parameters per PQC block
-    collapse_method::C
+    collapse_method::CM
 
     function ModelArch(;
         n_data::Int64,
@@ -52,9 +52,9 @@ struct ModelArch{C}
         ansatz = ansatz_builder(n_qubits, n_layers)
         ansatz_name = ansatz_builder |> nameof |> string
         n_params_ppb = ansatz |> parameters |> length
-        C = collapse_method |> Val |> typeof
+        CM = collapse_method |> Val |> typeof
 
-        return new{C}(
+        return new{CM}(
             n_data,
             n_ancilla,
             n_qubits,
@@ -67,12 +67,12 @@ struct ModelArch{C}
     end
 end
 
-struct TrainConfig
+struct TrainConfig{TT}
     dataset_size::Int64
     batch_size::Int64
     T::Int64
     initial_ensemble::CBArrayReg
-    target_trajectory_type::TargetTrajectoryType
+    target_trajectory_type::TT
     target_trajectory::Vector{CBArrayReg}
     target_schedule::Vector{Int64}
     epoch_schedule::Vector{Int64}
@@ -92,13 +92,14 @@ function TrainConfig(
     dataset_size = target_ensemble.nbatch
     batch_size = initial_ensemble.nbatch
     target_trajectory = [target_ensemble]
+    TT = direct |> Val |> typeof
 
-    return TrainConfig(
+    return TrainConfig{TT}(
         dataset_size,
         batch_size,
         T,
         initial_ensemble,
-        direct,
+        Val(direct),
         target_trajectory,
         target_schedule,
         epoch_schedule,
@@ -120,12 +121,14 @@ function TrainConfig(
     batch_size = initial_ensemble.nbatch
 
     @assert length(epoch_schedule) == T "epoch_schedule must have the same length as the target trajectory (minus one)"
+    TT = diffusion |> Val |> typeof
 
-    return TrainConfig(
+    return TrainConfig{TT}(
         dataset_size,
         batch_size,
         T,
-        diffusion,
+        initial_ensemble,
+        Val(diffusion),
         target_trajectory,
         target_schedule,
         epoch_schedule,

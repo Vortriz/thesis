@@ -111,3 +111,9 @@ function batch_and_normalize(ensemble::CuMatrix{ComplexF64})::CBArrayReg
 
     return reg
 end
+
+
+export get_final_training_loss
+
+get_final_training_loss(loss_history::Vector{Vector{Float64}})::Float64 =
+    last(loss_history[end], 10) |> mean

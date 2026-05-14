@@ -62,7 +62,7 @@ function plot_loss_history(
         )
     end
 
-    final_loss = last(loss_history[end], 10) |> mean
+    final_loss = get_final_training_loss(loss_history)
     hlines!(
         ax,
         final_loss;
