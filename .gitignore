@@ -13,3 +13,6 @@ result*
 # SLURM
 **/job*.err
 **/job*.out
+
+# Logging and checkpoints
+data/

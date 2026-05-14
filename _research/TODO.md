@@ -5,3 +5,5 @@
 - port `archive/training_strategies`
 - recreate important results from `archive/saves`
 - unit tests
+- if TensorBoardLogger works, move it to ext
+- understand and fix rng (const rng just feels weird)

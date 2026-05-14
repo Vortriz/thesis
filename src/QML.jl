@@ -20,6 +20,7 @@ using CairoMakie
 using QuantumToolbox: Bloch, basis, expect, sigmax, sigmay, sigmaz, add_points!, render
 
 using ProgressLogging: @progress
+using TensorBoardLogger, Logging
 
 
 export Device, StorageType
@@ -41,5 +42,6 @@ include("losses.jl")
 include("distributions.jl")
 include("inference.jl")
 include("plotting.jl")
+include("logging.jl")
 
 end

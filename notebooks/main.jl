@@ -22,15 +22,18 @@ end
 
 # ╔═╡ f0dd9925-d3d2-4cad-9b9f-bf11ac792953
 begin
-    using Yao
     using Random
     using LinearAlgebra
+    import Dates
+
+    using Yao
     using CairoMakie
     using StatsBase
     import Zygote
     import Optimisers
 
     using ProgressLogging
+    using TensorBoardLogger, Logging
     # using BenchmarkTools
     # using JET
     # using ProfilePerfetto
@@ -40,11 +43,13 @@ end
 begin
     const T = 2
     const rng = MersenneTwister(1234)
+    const TB_LOGGING = true
+
     arch = ModelArch(;
-        n_data=2,
+        n_data=1,
         n_ancilla=1,
-        n_layers=2,
-        ansatz_builder=EHA,
+        n_layers=1,
+        ansatz_builder=HEA,
         collapse_method=normal,
     )
 
@@ -68,22 +73,37 @@ begin
         epoch_schedule=fill(300, T),
         optimizer=Optimisers.AMSGrad(0.01),
     )
-
 end;
 
+# ╔═╡ d5d5bd83-1e77-4d5f-a24c-a0e576fe1eff
+begin
+    const save_path = joinpath(
+        dirname(Base.current_project()),
+        "data",
+        Dates.format(Dates.now(), "yyyy-mm-dd_HH-MM-SS"),
+    )
+    tbl = TB_LOGGING ? TBLogger(
+        save_path;
+        min_level=Logging.Info,
+    ) : nothing
+end
+
 # ╔═╡ 0c83c042-7de8-4b61-a041-59d39f9d61bd
-plot_bloch_sphere(target_ensemble)
+target_bloch = plot_bloch_sphere(target_ensemble)
 
 # ╔═╡ 1af82bcf-1787-403e-a4c8-8bc59f1bd995
 function train(
     arch::ModelArch,
-    config::TrainConfig,
+    config::TrainConfig;
+    callback=(loss, step) -> nothing,
 )
     params = rand(rng, Float64, (arch.n_params_ppb, config.T))
     loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
 
     model_state = ModelState()
     model_state.current_ensemble = config.initial_ensemble |> copy
+
+    global_step = 1
 
     @progress for t in 1:config.T
         append_qubits!(model_state.current_ensemble, arch.n_ancilla)
@@ -106,6 +126,9 @@ function train(
 
             Optimisers.update!(opt_state, model_state.current_params, grads[1])
             loss_history[t][epoch] = loss
+
+            callback(loss, global_step)
+            global_step += 1
         end
 
         model_state.current_ensemble =
@@ -122,13 +145,18 @@ function train(
 end
 
 # ╔═╡ de779e94-a981-4020-a5d8-ef25ba701015
-loss_history, params = train(arch, config)
-
-# ╔═╡ 4f4c1a18-5b37-4f4a-9d78-a07f3cc51c68
-arch.collapse_method
+loss_history, params = train(
+    arch,
+    config;
+    callback=(loss, step) -> begin
+        if !isnothing(tbl)
+            log_value(tbl, "loss", loss; step=step)
+        end
+    end,
+)
 
 # ╔═╡ e7010f58-8607-4bd6-97d2-b0a3a668bbb5
-plot_loss_history(loss_history; yscale=log10)
+loss_history_fig = plot_loss_history(loss_history; yscale=log10)
 
 # ╔═╡ c0c82792-abd4-48b4-8fe2-d913c60d1e92
 generated_trajectory = inference(
@@ -144,17 +172,28 @@ generated_trajectory = inference(
 );
 
 # ╔═╡ dcdba0ce-8b94-4d38-8e9e-980070e155e0
-plot_bloch_sphere(generated_trajectory[end])
+generated_bloch = plot_bloch_sphere(generated_trajectory[end])
+
+# ╔═╡ d95bf7db-e4d9-4964-9019-69ac019dd7fb
+if TB_LOGGING == true
+    log_and_save(
+        tbl, save_path,
+        arch, config, rng,
+        loss_history, loss_history_fig, params,
+        target_bloch, generated_bloch,
+    )
+end
 
 # ╔═╡ Cell order:
 # ╟─168a33fa-4be8-11f1-937a-99ef8733e91e
 # ╠═7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
 # ╠═f0dd9925-d3d2-4cad-9b9f-bf11ac792953
 # ╠═7479301c-85c0-4773-bc5d-1195c7cb47ad
+# ╠═d5d5bd83-1e77-4d5f-a24c-a0e576fe1eff
 # ╠═0c83c042-7de8-4b61-a041-59d39f9d61bd
-# ╟─1af82bcf-1787-403e-a4c8-8bc59f1bd995
+# ╠═1af82bcf-1787-403e-a4c8-8bc59f1bd995
 # ╠═de779e94-a981-4020-a5d8-ef25ba701015
-# ╠═4f4c1a18-5b37-4f4a-9d78-a07f3cc51c68
 # ╠═e7010f58-8607-4bd6-97d2-b0a3a668bbb5
 # ╠═c0c82792-abd4-48b4-8fe2-d913c60d1e92
 # ╠═dcdba0ce-8b94-4d38-8e9e-980070e155e0
+# ╠═d95bf7db-e4d9-4964-9019-69ac019dd7fb

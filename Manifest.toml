@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "e4091535e0b084a4b8944f52244cf9db5dfe4924"
+project_hash = "b2582c168baeba5be1c94e0959b214080630469b"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "bbc22a9a08a0ef6460041086d8a7b27940ed4ffd"
@@ -217,6 +217,11 @@ weakdeps = ["ChainRulesCore", "ForwardDiff"]
     BracketingNonlinearSolveChainRulesCoreExt = ["ChainRulesCore", "ForwardDiff"]
     BracketingNonlinearSolveForwardDiffExt = "ForwardDiff"
 
+[[deps.BufferedStreams]]
+git-tree-sha1 = "6863c5b7fc997eadcabdbaf6c5f201dc30032643"
+uuid = "e1450e63-4bb3-523b-b2a4-4ffa8c0fd77d"
+version = "1.2.2"
+
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "1b96ea4a01afe0ea4090c5c8039690672dd13f2e"
@@ -371,12 +376,6 @@ version = "1.19.2"
     Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
     TreeWidthSolver = "7d267fc5-9ace-409f-a54c-cd2374872a55"
 
-[[deps.CodeTracking]]
-deps = ["InteractiveUtils", "UUIDs"]
-git-tree-sha1 = "062c5e1a5bf6ada13db96a4ae4749a4c2234f521"
-uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
-version = "1.3.9"
-
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
 git-tree-sha1 = "962834c22b66e32aa10f7611c08c8ca4e20749a9"
@@ -457,11 +456,6 @@ weakdeps = ["Dates", "LinearAlgebra"]
 
     [deps.Compat.extensions]
     CompatLinearAlgebraExt = "LinearAlgebra"
-
-[[deps.Compiler]]
-git-tree-sha1 = "382d79bfe72a406294faca39ef0c3cef6e6ce1f1"
-uuid = "807dbc54-b67e-4c79-8afb-eafe4df6f2e1"
-version = "0.1.1"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1315,20 +1309,6 @@ git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
 uuid = "82899510-4779-5014-852e-03e436cf321d"
 version = "1.0.0"
 
-[[deps.JET]]
-deps = ["CodeTracking", "Compiler", "InteractiveUtils", "JuliaInterpreter", "JuliaSyntax", "LoweredCodeUtils", "MacroTools", "Pkg", "Preferences", "Test"]
-git-tree-sha1 = "2ec65c3003ffb3a09f0d70238f744409fd48168a"
-uuid = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
-version = "0.10.6"
-
-    [deps.JET.extensions]
-    JETCthulhuExt = "Cthulhu"
-    JETReviseExt = "Revise"
-
-    [deps.JET.weakdeps]
-    Cthulhu = "f68482b8-f384-11e8-15f7-abe071a5a75f"
-    Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
-
 [[deps.JLD2]]
 deps = ["ChunkCodecLibZlib", "ChunkCodecLibZstd", "FileIO", "MacroTools", "Mmap", "OrderedCollections", "PrecompileTools", "ScopedValues"]
 git-tree-sha1 = "941f87a0ae1b14d1ac2fa57245425b23a9d7a516"
@@ -1369,22 +1349,11 @@ git-tree-sha1 = "c0c9b76f3520863909825cbecdef58cd63de705a"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "3.1.5+0"
 
-[[deps.JuliaInterpreter]]
-deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "6ac9e4acc417a5b534ace12690bc6973c25b862f"
-uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.10.3"
-
 [[deps.JuliaNVTXCallbacks_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "af433a10f3942e882d3c671aacb203e006a5808f"
 uuid = "9c1d0b0a-7046-5b2e-a33f-ea22f176ac7e"
 version = "0.2.1+0"
-
-[[deps.JuliaSyntax]]
-git-tree-sha1 = "937da4713526b96ac9a178e2035019d3b78ead4a"
-uuid = "70703baa-626e-46a2-a12c-08ffd08c73b4"
-version = "0.4.10"
 
 [[deps.JuliaSyntaxHighlighting]]
 deps = ["StyledStrings"]
@@ -1707,12 +1676,6 @@ deps = ["Dates", "Logging"]
 git-tree-sha1 = "f00544d95982ea270145636c181ceda21c4e2575"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.2.0"
-
-[[deps.LoweredCodeUtils]]
-deps = ["Compiler", "JuliaInterpreter"]
-git-tree-sha1 = "b882a7dd7ef37643066ae8f9380beea8fdd89cae"
-uuid = "6f1432cf-f94c-5a45-995e-cdbf5db27b0b"
-version = "3.4.2"
 
 [[deps.Luxor]]
 deps = ["Base64", "Cairo", "Colors", "DataStructures", "Dates", "FFMPEG", "FileIO", "PolygonAlgorithms", "PrecompileTools", "Random", "Rsvg"]
@@ -2248,13 +2211,19 @@ git-tree-sha1 = "fbb92c6c56b34e1a2c4c36058f68f332bec840e7"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
 version = "1.11.0"
 
+[[deps.ProtoBuf]]
+deps = ["BufferedStreams", "EnumX", "TOML"]
+git-tree-sha1 = "da18083a52d9d57bbe6dadaacad39731e5f7be39"
+uuid = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
+version = "1.3.0"
+
 [[deps.PtrArrays]]
 git-tree-sha1 = "4fbbafbc6251b883f4d2705356f3641f3652a7fe"
 uuid = "43287f4e-b6f4-7ad1-bb20-aadabca52c3d"
 version = "1.4.0"
 
 [[deps.QML]]
-deps = ["Bessels", "CUDA", "CairoMakie", "Combinatorics", "DrWatson", "Hyperopt", "JET", "JLD2", "LaTeXStrings", "LinearAlgebra", "Optimisers", "Pluto", "ProgressLogging", "QuantumToolbox", "Random", "Statistics", "StatsBase", "Yao", "YaoPlots", "Zygote"]
+deps = ["Bessels", "CUDA", "CairoMakie", "Combinatorics", "DrWatson", "Hyperopt", "JLD2", "LaTeXStrings", "LinearAlgebra", "Logging", "Optimisers", "Pluto", "ProgressLogging", "QuantumToolbox", "Random", "Statistics", "StatsBase", "TensorBoardLogger", "Yao", "YaoPlots", "Zygote"]
 path = "."
 uuid = "b07192c8-6623-4550-9f76-7af2dcc596be"
 version = "0.0.0"
@@ -2830,6 +2799,12 @@ version = "1.12.1"
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 version = "1.10.0"
+
+[[deps.TensorBoardLogger]]
+deps = ["CRC32c", "FileIO", "ImageCore", "ProtoBuf", "Requires", "StatsBase"]
+git-tree-sha1 = "ffda2ea7ce5b247b98cce31523dcb95149aba187"
+uuid = "899adc3e-224a-11e9-021f-63837185c80f"
+version = "0.1.26"
 
 [[deps.TensorCore]]
 deps = ["LinearAlgebra"]
