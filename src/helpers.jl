@@ -42,7 +42,7 @@ function loss_and_grads(
             C = 1.0 .- abs2.(target_matrix' * collapsed_ensemble_matrix)
 
             Γ = Zygote.ignore() do
-                return optimal_transport_plan(C)
+                return optimal_transport_plan(C; β=0.01, max_iter=500, L=1)
             end
 
             return dot(Γ, C)
