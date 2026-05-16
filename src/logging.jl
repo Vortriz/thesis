@@ -1,4 +1,4 @@
-export log_and_save
+export log_hyperparams, save_run
 
 function log_hyperparams(
     logger::TBLogger,
@@ -44,14 +44,12 @@ function log_hyperparams(
     return
 end
 
-function log_and_save(
+function save_run(
     tbl::TBLogger, save_path::String,
     arch::ModelArch, config::TrainConfig, rng::AbstractRNG,
     loss_history::Vector{Vector{Float64}}, loss_history_fig, params::Matrix{Float64},
     target_bloch=nothing, generated_bloch=nothing,
 )
-    log_hyperparams(tbl, arch, config, rng)
-
     @save joinpath(save_path, "model.jld2") arch config rng
     @save joinpath(save_path, "results.jld2") loss_history params
 

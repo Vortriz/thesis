@@ -86,6 +86,7 @@ begin
         save_path;
         min_level=Logging.Info,
     ) : nothing
+    log_hyperparams(tbl, arch, config, rng)
 end
 
 # ╔═╡ 0c83c042-7de8-4b61-a041-59d39f9d61bd
@@ -120,7 +121,7 @@ function train(
                 config.batch_size,
                 replace=false,
             )
-            model_state.target_matrix = @view target_matrix[:, target_indices]
+            model_state.target_matrix = target_matrix[:, target_indices]
 
             loss, grads = loss_and_grads(arch, model_state)
 
@@ -176,7 +177,7 @@ generated_bloch = plot_bloch_sphere(generated_trajectory[end])
 
 # ╔═╡ d95bf7db-e4d9-4964-9019-69ac019dd7fb
 if TB_LOGGING == true
-    log_and_save(
+    save_run(
         tbl, save_path,
         arch, config, rng,
         loss_history, loss_history_fig, params,
