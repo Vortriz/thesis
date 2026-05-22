@@ -1,14 +1,14 @@
 export log_hyperparams, save_run
 
 function log_hyperparams(
-    logger::TBLogger,
+    tbl::TBLogger,
     arch::ModelArch,
     config::TrainConfig,
     rng::AbstractRNG,
 )
     for field in [:n_data, :n_ancilla, :n_qubits, :n_layers, :ansatz_name, :n_params_ppb]
         log_text(
-            logger,
+            tbl,
             field |> string,
             getfield(arch, field);
             step=0,
@@ -16,7 +16,7 @@ function log_hyperparams(
     end
 
     log_text(
-        logger,
+        tbl,
         "collapse_method",
         typeof(arch.collapse_method).parameters[1] |> string;
         step=0,
@@ -25,7 +25,7 @@ function log_hyperparams(
     for field in
         [:dataset_size, :batch_size, :T, :target_schedule, :epoch_schedule, :optimizer]
         log_text(
-            logger,
+            tbl,
             field |> string,
             getfield(config, field);
             step=0,
@@ -33,13 +33,13 @@ function log_hyperparams(
     end
 
     log_text(
-        logger,
+        tbl,
         "target_trajectory_type",
         typeof(config.target_trajectory_type).parameters[1] |> string;
         step=0,
     )
 
-    log_text(logger, "rng", rng; step=0)
+    log_text(tbl, "rng", rng; step=0)
 
     return
 end
