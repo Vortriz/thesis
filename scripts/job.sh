@@ -1,8 +1,11 @@
 #!/bin/bash
-#SBATCH -G 1                       #specifies number of GPUs
-#SBATCH --time=12:00:00            #specifies maximum duration of run
+#SBATCH --partition=iiser_gpu
+#SBATCH --cpus-per-task=16
+#SBATCH --gpus 1
+#SBATCH --time=1-12:00:00            #specifies maximum duration of run
 #SBATCH --job-name=QML
-#SBATCH --error=job.%J.err
-#SBATCH --output=job.%J.out
+#SBATCH --error=logs/job.%J.err
+#SBATCH --output=logs/job.%J.out
 
-srun --unbuffered time julia main.jl
+julia --project -e 'using Pkg; Pkg.precompile()'
+julia --project notebooks/main.jl

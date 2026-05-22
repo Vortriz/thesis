@@ -11,8 +11,7 @@ result*
 **/.ruff_cache
 
 # SLURM
-**/job*.err
-**/job*.out
+logs/
 
-# Logging and checkpoints
+# Julia logging and checkpoints
 data/
