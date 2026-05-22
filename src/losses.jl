@@ -42,10 +42,10 @@ function optimal_transport_plan(
         @. Q = K * P
         for _ in 1:L
             mul!(Qv_buffer, Q, v)
-            @. u = a1 / Qv_buffer
+            @. u = a1 / (Qv_buffer + 1e-300)
 
             mul!(QTu_buffer, Q', u)
-            @. v = a2 / QTu_buffer
+            @. v = a2 / (QTu_buffer + 1e-300)
         end
         @. P = u * Q * v'
     end
