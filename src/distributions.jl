@@ -45,14 +45,20 @@ end
 function gen_dist(
     ::Val{qkrlocalized};
     n_qubits::Int64,
-    K::Vector{Float64},
-    ħₛ::Vector{Float64},
+    K::Union{Float64, Vector{Float64}},
+    ħₛ::Union{Float64, Vector{Float64}},
 )::CBArrayReg
-    @assert length(K) == length(ħₛ) "K and ħₛ should have same number of values."
+    if typeof(K) == Float64
+        K = fill(K, length(ħₛ))
+    end
+
+    if typeof(ħₛ) == Float64
+        ħₛ = fill(ħₛ, length(K))
+    end
 
     return reduce(
         hcat,
-        [gen_qkrlocalized_states(n_qubits, K[i], ħₛ[i]) for i in length(K)],
+        [gen_qkrlocalized_states(n_qubits, K[i], ħₛ[i]) for i in eachindex(K)],
     ) |> batch_and_normalize
 end
 
