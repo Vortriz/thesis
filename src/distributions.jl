@@ -17,16 +17,12 @@ function gen_dist(
 end
 
 # [MARK] try using QuantumToolbox.jl
-function gen_dist(
-    ::Val{qkrlocalized};
+function gen_qkrlocalized_states(
     n_qubits::Int64,
-    n_samples::Int64,
-    K::Float64=12.0,
-    ħₛ::Float64=0.7,
-)::CBArrayReg
+    K::Float64,
+    ħₛ::Float64,
+)::CBMatrix
     dims = 2^n_qubits
-    @assert n_samples <= dims "Number of samples cannot exceed the dimension of the Hilbert space."
-
     m_vec = [0:(dims/2-1); (-dims/2):-1]
     U = zeros(ComplexF64, (dims, dims))
 
@@ -43,10 +39,21 @@ function gen_dist(
         U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
     end
 
-    evd = U |> StorageType |> eigen
-    eigenstates = evd.vectors[:, 1:n_samples]
+    return (U |> StorageType |> eigen).vectors
+end
 
-    return eigenstates |> batch_and_normalize
+function gen_dist(
+    ::Val{qkrlocalized};
+    n_qubits::Int64,
+    K::Vector{Float64},
+    ħₛ::Vector{Float64},
+)::CBArrayReg
+    @assert length(K) == length(ħₛ) "K and ħₛ should have same number of values."
+
+    return reduce(
+        hcat,
+        [gen_qkrlocalized_states(n_qubits, K[i], ħₛ[i]) for i in length(K)],
+    ) |> batch_and_normalize
 end
 
 function gen_dist(
