@@ -99,21 +99,28 @@ end
 export batch_and_normalize
 
 function batch_and_normalize(ensemble::Matrix{ComplexF64})::CBArrayReg
-    reg = ensemble |> BatchedArrayReg |> transpose_storage
-    normalize!(reg)
-
-    return reg
+    return ensemble |> BatchedArrayReg |> transpose_storage |> normalize!
 end
 
 function batch_and_normalize(ensemble::CuMatrix{ComplexF64})::CBArrayReg
-    reg = ensemble |> BatchedArrayReg
-    normalize!(reg)
-
-    return reg
+    return ensemble |> BatchedArrayReg |> normalize!
 end
 
 
 export get_final_training_loss
 
-get_final_training_loss(loss_history::Vector{Vector{Float64}})::Float64 =
-    last(loss_history[end], 10) |> mean
+function get_final_training_loss(loss_history::Vector{Vector{Float64}})::Float64
+    return last(loss_history[end], 10) |> mean
+end
+
+
+export get_centered_amplitudes
+
+function get_centered_amplitudes(ψ::AbstractVector{ComplexF64})
+    dims = length(ψ)
+    amplitudes = abs2.(ψ)
+    _, idx = findmax(amplitudes)
+    circshift!(amplitudes, dims - idx + 1)
+
+    return amplitudes
+end

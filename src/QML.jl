@@ -26,8 +26,9 @@ using TensorBoardLogger, Logging
 export Device, StorageType
 
 # I hope this is not cursed
-const Device = CUDA.functional() ? CUDA : Base
-const StorageType = CUDA.functional() ? CuArray : Array
+const has_cuda = CUDA.functional()
+const Device = has_cuda ? CUDA : Base
+const StorageType = has_cuda ? CuArray : Array
 
 # Force CPU irrespective of GPU availability (for testing purposes)
 # const Device = Base

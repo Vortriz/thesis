@@ -112,32 +112,37 @@ function plot_trajectory_convergence(;
     return fig
 end
 
-function plot_qkr_localization(ensemble::CBArrayReg)
-    ensemble = ensemble |> cpu
-    dims, n = size(ensemble.state)
+function plot_qkr_localization(amplitudes::Vector{Float64})
+    dims = length(amplitudes)
     m_vec = [0:(dims/2-1); (-dims/2):-1]
-    avg_amplitudes = zeros(dims)
-    for ϕ in ensemble.state |> eachcol
-        amplitudes = abs2.(ϕ)
-        _, idx = findmax(amplitudes)
-        circshift!(amplitudes, dims - idx + 1)
-        avg_amplitudes += amplitudes
-    end
-    avg_amplitudes /= n
 
     fig = Figure()
     ax = Axis(
         fig[1, 1];
         title="Localization of states",
         xlabel="m",
-        ylabel="|ψ(p)|²)",
+        ylabel="|ψ(p)|²",
         yscale=log10,
     )
     scatter!(
         ax,
-        m_vec, avg_amplitudes;
-        markersize=3,
+        m_vec, amplitudes;
+        markersize=5,
         label=:none,
     )
+
     return fig
+end
+
+function plot_qkr_localization(ensemble::CBArrayReg)
+    ensemble = ensemble |> cpu
+    dims, n = size(ensemble.state)
+    avg_amplitudes = zeros(Float64, dims)
+    for ψ in ensemble.state |> eachcol
+        amplitudes = get_centered_amplitudes(ψ)
+        avg_amplitudes += amplitudes
+    end
+    avg_amplitudes /= n
+
+    return plot_qkr_localization(avg_amplitudes)
 end
