@@ -112,15 +112,15 @@ function plot_trajectory_convergence(;
     return fig
 end
 
-function plot_qkr_localization(arch::ModelArch, ensemble::CBArrayReg)
-    n = length(states)
-    dims = 2^arch.n_data
+function plot_qkr_localization(ensemble::CBArrayReg)
+    ensemble = ensemble |> cpu
+    dims, n = size(ensemble.state)
     m_vec = [0:(dims/2-1); (-dims/2):-1]
     avg_amplitudes = zeros(dims)
     for ϕ in ensemble.state |> eachcol
         amplitudes = abs2.(ϕ)
         _, idx = findmax(amplitudes)
-        circshift!(amplitudes, n-idx+1)
+        circshift!(amplitudes, dims - idx + 1)
         avg_amplitudes += amplitudes
     end
     avg_amplitudes /= n
