@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.25
+# v0.20.27
 
 using Markdown
 using InteractiveUtils
@@ -39,39 +39,45 @@ begin
     # using ProfilePerfetto
 end
 
+# ╔═╡ 95f1c7e6-b6e7-4301-be13-634dc1550b7a
+begin
+    import CUDA
+    @info "Using: $(Device) with storage type: $(StorageType)"
+end
+
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    const T = 2
+    const T = 1
     const rng = MersenneTwister(1234)
-    const TB_LOGGING = true
+    const TB_LOGGING = false
 
     arch = ModelArch(;
-        n_data=1,
-        n_ancilla=1,
-        n_layers=1,
-        ansatz_builder=HEA,
+        n_data=8,
+        n_ancilla=5,
+        n_layers=8,
+        ansatz_builder=EHA,
         collapse_method=normal,
     )
 
     initial_ensemble = gen_dist(
-        Val(haar),
-        rng;
-        n_qubits=arch.n_data,
-        n_samples=100,
-    )
-    target_ensemble = gen_dist(
         Val(clustered),
         rng;
         n_qubits=arch.n_data,
-        n_samples=1000,
+        n_samples=600,
+    )
+    target_ensemble = gen_dist(
+        Val(qkrlocalized);
+        n_qubits=arch.n_data,
+        K=range(4.7, 5.3; step=0.1) |> collect,
+        ħₛ=0.7,
     )
 
     config = TrainConfig(
         Val(direct);
         initial_ensemble=initial_ensemble,
         target_ensemble=target_ensemble,
-        epoch_schedule=fill(300, T),
-        optimizer=Optimisers.AMSGrad(0.01),
+        epoch_schedule=fill(4000, T),
+        optimizer=Optimisers.AMSGrad(0.03),
     )
 end;
 
@@ -82,11 +88,14 @@ begin
         "data",
         Dates.format(Dates.now(), "yyyy-mm-dd_HH-MM-SS"),
     )
-    tbl = TB_LOGGING ? TBLogger(
+    tbl = TBLogger(
         save_path;
         min_level=Logging.Info,
-    ) : nothing
-    log_hyperparams(tbl, arch, config, rng)
+    )
+
+    if TB_LOGGING == true
+        log_hyperparams(tbl, arch, config, rng)
+    end
 end
 
 # ╔═╡ 0c83c042-7de8-4b61-a041-59d39f9d61bd
@@ -118,7 +127,7 @@ function train(
         @progress for epoch in 1:config.epoch_schedule[t]
             target_indices = sample(
                 1:config.dataset_size,
-                config.batch_size,
+                config.batch_size;
                 replace=false,
             )
             model_state.target_matrix = target_matrix[:, target_indices]
@@ -150,7 +159,7 @@ loss_history, params = train(
     arch,
     config;
     callback=(loss, step) -> begin
-        if !isnothing(tbl)
+        if TB_LOGGING == true
             log_value(tbl, "loss", loss; step=step)
         end
     end,
@@ -188,6 +197,7 @@ end
 # ╔═╡ Cell order:
 # ╟─168a33fa-4be8-11f1-937a-99ef8733e91e
 # ╠═7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
+# ╟─95f1c7e6-b6e7-4301-be13-634dc1550b7a
 # ╠═f0dd9925-d3d2-4cad-9b9f-bf11ac792953
 # ╠═7479301c-85c0-4773-bc5d-1195c7cb47ad
 # ╠═d5d5bd83-1e77-4d5f-a24c-a0e576fe1eff
