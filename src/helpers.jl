@@ -28,8 +28,8 @@ function loss_and_grads(
     model_state::ModelState,
 )
     params = model_state.current_params
-    target_matrix = model_state.target_matrix
-    input_ensemble = model_state.current_ensemble
+    target_matrix = model_state.target_matrix_batch
+    input_ensemble = model_state.current_ensemble_batch
 
     return (
         Zygote.withgradient(params) do p

@@ -81,6 +81,7 @@ end
 
 function TrainConfig(
     ::Val{direct};
+    batch_size::Int64,
     initial_ensemble::CBArrayReg,
     target_ensemble::CBArrayReg,
     epoch_schedule::Vector{Int64},
@@ -90,7 +91,6 @@ function TrainConfig(
     target_schedule = Device.ones(Int64, T)
 
     dataset_size = target_ensemble.nbatch
-    batch_size = initial_ensemble.nbatch
     target_trajectory = [target_ensemble]
     TT = direct |> Val |> typeof
 
@@ -109,6 +109,7 @@ end
 
 function TrainConfig(
     ::Val{diffusion};
+    batch_size::Int64,
     initial_ensemble::CBArrayReg,
     target_trajectory::Vector{CBArrayReg},
     epoch_schedule::Vector{Int64},
@@ -118,7 +119,6 @@ function TrainConfig(
     target_schedule = Device.range(; start=T, stop=1, step=-1) |> collect
 
     dataset_size = target_trajectory[begin].nbatch
-    batch_size = initial_ensemble.nbatch
 
     @assert length(epoch_schedule) == T "epoch_schedule must have the same length as the target trajectory (minus one)"
     TT = diffusion |> Val |> typeof

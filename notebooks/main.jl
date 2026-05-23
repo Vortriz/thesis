@@ -74,6 +74,7 @@ begin
 
     config = TrainConfig(
         Val(direct);
+        batch_size=200,
         initial_ensemble=initial_ensemble,
         target_ensemble=target_ensemble,
         epoch_schedule=fill(4000, T),
