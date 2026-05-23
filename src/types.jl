@@ -138,8 +138,8 @@ end
 
 mutable struct ModelState
     current_params::Vector{Float64}
-    current_ensemble::CBArrayReg
-    target_matrix::CBMatrix
+    current_ensemble_batch::CBArrayReg
+    target_matrix_batch::CBMatrix
 
     ModelState() = new()
 end

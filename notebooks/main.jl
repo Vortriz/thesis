@@ -47,29 +47,29 @@ end
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    const T = 1
+    const T = 4
     const rng = MersenneTwister(1234)
     const TB_LOGGING = false
 
     arch = ModelArch(;
-        n_data=8,
-        n_ancilla=5,
-        n_layers=8,
+        n_data=4,
+        n_ancilla=2,
+        n_layers=4,
         ansatz_builder=EHA,
         collapse_method=normal,
     )
 
     initial_ensemble = gen_dist(
+        Val(haar),
+        rng;
+        n_qubits=arch.n_data,
+        n_samples=5000,
+    )
+    target_ensemble = gen_dist(
         Val(clustered),
         rng;
         n_qubits=arch.n_data,
-        n_samples=600,
-    )
-    target_ensemble = gen_dist(
-        Val(qkrlocalized);
-        n_qubits=arch.n_data,
-        K=range(4.7, 5.3; step=0.1) |> collect,
-        ħₛ=0.7,
+        n_samples=5000,
     )
 
     config = TrainConfig(
@@ -77,7 +77,7 @@ begin
         batch_size=200,
         initial_ensemble=initial_ensemble,
         target_ensemble=target_ensemble,
-        epoch_schedule=fill(4000, T),
+        epoch_schedule=fill(300, T),
         optimizer=Optimisers.AMSGrad(0.03),
     )
 end;
@@ -89,12 +89,11 @@ begin
         "data",
         Dates.format(Dates.now(), "yyyy-mm-dd_HH-MM-SS"),
     )
-    tbl = TBLogger(
-        save_path;
-        min_level=Logging.Info,
-    )
-
     if TB_LOGGING == true
+        tbl = TBLogger(
+            save_path;
+            min_level=Logging.Info,
+        )
         log_hyperparams(tbl, arch, config, rng)
     end
 end
@@ -108,30 +107,24 @@ function train(
     config::TrainConfig;
     callback=(loss, step) -> nothing,
 )
-    params = rand(rng, Float64, (arch.n_params_ppb, config.T))
+    params = zeros(Float64, (arch.n_params_ppb, config.T))
     loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
 
-    model_state = ModelState()
-    model_state.current_ensemble = config.initial_ensemble |> copy
+    current_ensemble = config.initial_ensemble |> deepcopy
 
+    model_state = ModelState()
     global_step = 1
 
     @progress for t in 1:config.T
-        append_qubits!(model_state.current_ensemble, arch.n_ancilla)
-
-        model_state.current_params = params[:, t]
+        model_state.current_params = rand(rng, Float64, arch.n_params_ppb)
         opt_state = Optimisers.setup(config.optimizer, model_state.current_params)
 
+        append_qubits!(current_ensemble, arch.n_ancilla)
         target_idx = config.target_schedule[t]
         target_matrix = config.target_trajectory[target_idx].state
 
         @progress for epoch in 1:config.epoch_schedule[t]
-            target_indices = sample(
-                1:config.dataset_size,
-                config.batch_size;
-                replace=false,
-            )
-            model_state.target_matrix = target_matrix[:, target_indices]
+            sample_batch!(config, model_state, current_ensemble, target_matrix)
 
             loss, grads = loss_and_grads(arch, model_state)
 
@@ -142,12 +135,12 @@ function train(
             global_step += 1
         end
 
-        model_state.current_ensemble =
+        current_ensemble =
             apply_pqc(
                 arch,
-                model_state.current_ensemble,
+                current_ensemble,
                 model_state.current_params,
-            ) |> batch_and_normalize
+            ) |> BatchedArrayReg
 
         params[:, t] = model_state.current_params
     end
@@ -167,7 +160,10 @@ loss_history, params = train(
 )
 
 # ╔═╡ e7010f58-8607-4bd6-97d2-b0a3a668bbb5
-loss_history_fig = plot_loss_history(loss_history; yscale=log10)
+loss_history_fig = plot_loss_history(
+	loss_history;
+	yscale=log10,
+)
 
 # ╔═╡ c0c82792-abd4-48b4-8fe2-d913c60d1e92
 generated_trajectory = inference(
@@ -188,7 +184,7 @@ generated_bloch = plot_bloch_sphere(generated_trajectory[end])
 # ╔═╡ d95bf7db-e4d9-4964-9019-69ac019dd7fb
 if TB_LOGGING == true
     save_run(
-        tbl, save_path,
+        save_path,
         arch, config, rng,
         loss_history, loss_history_fig, params,
         target_bloch, generated_bloch,

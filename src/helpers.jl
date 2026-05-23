@@ -1,3 +1,5 @@
+# [TODO] remove exports once training loop is internalized
+
 export apply_pqc
 
 function apply_pqc(
@@ -47,5 +49,34 @@ function loss_and_grads(
 
             return dot(Γ, C)
         end
+    )
+end
+
+
+export sample_batch!
+
+function sample_batch!(
+    config::TrainConfig,
+    model_state::ModelState,
+    current_ensemble::CBArrayReg,
+    target_matrix::CBMatrix,
+)
+    model_state.current_ensemble_batch =
+        reduce(
+            hcat,
+            sample(
+                eachcol(current_ensemble.state),
+                config.batch_size;
+                replace=false,
+            ),
+        ) |> BatchedArrayReg
+
+    return model_state.target_matrix_batch = reduce(
+        hcat,
+        sample(
+            eachcol(target_matrix),
+            config.batch_size;
+            replace=false,
+        ),
     )
 end

@@ -45,7 +45,7 @@ function log_hyperparams(
 end
 
 function save_run(
-    tbl::TBLogger, save_path::String,
+    save_path::String,
     arch::ModelArch, config::TrainConfig, rng::AbstractRNG,
     loss_history::Vector{Vector{Float64}}, loss_history_fig, params::Matrix{Float64},
     target_bloch=nothing, generated_bloch=nothing,
