@@ -14,7 +14,7 @@ export CollapseMethod, normal, alternate
     alternate
 end
 
-export TargetSchedule, diffusion, direct
+export TargetTrajectoryType, diffusion, direct
 
 @enum TargetTrajectoryType begin
     diffusion
