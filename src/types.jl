@@ -1,9 +1,10 @@
-export Distribution, clustered, qkrlocalized, circle, haar
+export Distribution, clustered, qkrlocalized, circle, tfim, haar
 
 @enum Distribution begin
     clustered
-    circle
     qkrlocalized
+    circle
+    tfim
     haar
 end
 

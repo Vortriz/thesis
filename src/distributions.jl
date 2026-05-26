@@ -16,32 +16,6 @@ function gen_dist(
     return ensemble |> batch_and_normalize
 end
 
-# [MARK] try using QuantumToolbox.jl
-function gen_qkrlocalized_states(
-    n_qubits::Int64,
-    K::Float64,
-    ħₛ::Float64,
-)::CBMatrix
-    dims = 2^n_qubits
-    m_vec = [0:(dims/2-1); (-dims/2):-1]
-    U = zeros(ComplexF64, (dims, dims))
-
-    Threads.@threads for idx in CartesianIndices(U)
-        i, j = idx.I
-        m₁, m₂ = m_vec[i], m_vec[j]
-        d = m₂ - m₁
-        if d > dims / 2
-            d -= dims
-        end
-        if d < -dims / 2
-            d += dims
-        end
-        U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
-    end
-
-    return (U |> StorageType |> eigen).vectors
-end
-
 function gen_dist(
     ::Val{qkrlocalized};
     n_qubits::Int64,
@@ -78,6 +52,19 @@ function gen_dist(
             .|>
             ComplexF64
         )
+    end
+
+    return ensemble |> StorageType |> batch_and_normalize
+end
+
+function gen_dist(
+    ::Val{tfim};
+    n_qubits::Int64,
+    g::Vector{Float64},
+)::CBArrayReg
+    ensemble = zeros(ComplexF64, (2^n_qubits, length(g)))
+    for (i, gᵢ) in enumerate(g)
+        ensemble[:, i] = eigenstates(gen_tfim_hamiltonian(n_qubits, gᵢ)).vectors[:, 1]
     end
 
     return ensemble |> StorageType |> batch_and_normalize

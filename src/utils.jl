@@ -124,3 +124,80 @@ function get_centered_amplitudes(ψ::AbstractVector{ComplexF64})
 
     return amplitudes
 end
+
+
+export gen_qkrlocalized_states
+
+# [MARK] try using QuantumToolbox.jl
+function gen_qkrlocalized_states(
+    n_qubits::Int64,
+    K::Float64,
+    ħₛ::Float64,
+)::CBMatrix
+    dims = 2^n_qubits
+    m_vec = [0:(dims/2-1); (-dims/2):-1]
+    U = zeros(ComplexF64, (dims, dims))
+
+    Threads.@threads for idx in CartesianIndices(U)
+        i, j = idx.I
+        m₁, m₂ = m_vec[i], m_vec[j]
+        d = m₂ - m₁
+        if d > dims / 2
+            d -= dims
+        end
+        if d < -dims / 2
+            d += dims
+        end
+        U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
+    end
+
+    return (U |> StorageType |> eigen).vectors
+end
+
+
+export gen_tfim_hamiltonian
+
+function gen_tfim_hamiltonian(
+    n_qubits::Int64,
+    g::Float64,
+)::AbstractQuantumObject{Operator}
+    H = Qobj(
+        zeros(ComplexF64, (2^n_qubits, 2^n_qubits));
+        dims=Tuple(fill(2, n_qubits)),
+    )
+    partial_term_1 = vcat(
+        [sigmaz(), sigmaz()],
+        fill(eye(2), n_qubits-2),
+    )
+    partial_term_2 = vcat(
+        [sigmax()],
+        fill(eye(2), n_qubits-1),
+    )
+    for i in 0:(n_qubits-2)
+        H -= reduce(kron, circshift(partial_term_1, i))
+    end
+    for i in 0:(n_qubits-1)
+        H -= g * reduce(kron, circshift(partial_term_2, i))
+    end
+
+    return H
+end
+
+
+export magnetization
+
+function magnetization(ψ::AbstractVector{ComplexF64})
+    n = ψ |> length |> log2 |> Int64
+    M = 0
+    for (i, ψᵢ) in enumerate(ψ)
+        ψᵢ_M = 0
+        for spin in digits(i-1; base=2, pad=n) |> reverse |> BitVector
+            ψᵢ_M += abs2(ψᵢ) * (spin ? 1 : -1)
+        end
+        ψᵢ_M /= n
+        @assert abs(ψᵢ_M) <= 1
+        M += abs(ψᵢ_M)
+    end
+
+    return M
+end

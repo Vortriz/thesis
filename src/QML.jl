@@ -17,7 +17,7 @@ using JLD2
 
 using LaTeXStrings
 using CairoMakie
-using QuantumToolbox: Bloch, basis, expect, sigmax, sigmay, sigmaz, add_points!, render
+using QuantumToolbox
 
 using ProgressLogging: @progress
 using TensorBoardLogger, Logging

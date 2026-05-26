@@ -1,5 +1,4 @@
-export plot_bloch_sphere,
-    plot_loss_history, plot_trajectory_convergence, plot_qkr_localization
+export plot_bloch_sphere
 
 function plot_bloch_sphere(ensemble::CBArrayReg)
     ensemble = ensemble |> cpu
@@ -31,6 +30,9 @@ function plot_bloch_sphere(ensemble::CBArrayReg)
 
     return fig
 end
+
+
+export plot_loss_history
 
 function plot_loss_history(
     loss_history::Vector{Vector{Float64}};
@@ -77,6 +79,9 @@ function plot_loss_history(
 
 end
 
+
+export plot_trajectory_convergence
+
 function plot_trajectory_convergence(;
     trajectory::Vector{CBArrayReg},
     target_ensemble::CBArrayReg,
@@ -112,6 +117,9 @@ function plot_trajectory_convergence(;
     return fig
 end
 
+
+export plot_qkr_localization
+
 function plot_qkr_localization(amplitudes::Vector{Float64})
     dims = length(amplitudes)
     m_vec = [0:(dims/2-1); (-dims/2):-1]
@@ -145,4 +153,32 @@ function plot_qkr_localization(ensemble::CBArrayReg)
     avg_amplitudes /= n
 
     return plot_qkr_localization(avg_amplitudes)
+end
+
+
+export plot_tfim_magnetization_dist
+
+function plot_tfim_magnetization_dist(ensemble::CBArrayReg)
+    ensemble = ensemble |> cpu
+    magnetization_vals = zeros(Float64, ensemble.nbatch)
+    for (i, ψ) in ensemble.state |> eachcol |> enumerate
+        magnetization_vals[i] = magnetization(ψ)
+    end
+
+    fig = Figure()
+    ax = Axis(
+        fig[1, 1];
+        xlabel=L"M",
+        ylabel=L"PDF(M)",
+        xgridvisible=false,
+        ygridvisible=false,
+    )
+    xlims!(ax, 0, 1)
+
+    density!(
+        ax, magnetization_vals;
+        alpha=0.75,
+    )
+
+    return fig
 end

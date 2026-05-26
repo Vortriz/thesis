@@ -161,8 +161,8 @@ loss_history, params = train(
 
 # ╔═╡ e7010f58-8607-4bd6-97d2-b0a3a668bbb5
 loss_history_fig = plot_loss_history(
-	loss_history;
-	yscale=log10,
+    loss_history;
+    yscale=log10,
 )
 
 # ╔═╡ c0c82792-abd4-48b4-8fe2-d913c60d1e92
