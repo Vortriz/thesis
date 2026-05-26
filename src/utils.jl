@@ -116,7 +116,7 @@ end
 
 export get_centered_amplitudes
 
-function get_centered_amplitudes(ψ::AbstractVector{ComplexF64})
+function get_centered_amplitudes(ψ::CState)
     dims = length(ψ)
     amplitudes = abs2.(ψ)
     _, idx = findmax(amplitudes)
@@ -186,7 +186,7 @@ end
 
 export magnetization
 
-function magnetization(ψ::AbstractVector{ComplexF64})
+function magnetization(ψ::CState)
     n = ψ |> length |> log2 |> Int64
     M = 0
     for (i, ψᵢ) in enumerate(ψ)

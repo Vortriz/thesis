@@ -28,6 +28,7 @@ export CBArrayReg, CBMatrix
 # ConcreteBatchedArrayReg
 const CBArrayReg{T, MT} = BatchedArrayReg{2, T, MT}
 const CBMatrix = AbstractMatrix{ComplexF64}
+const CState = AbstractVector{ComplexF64}
 
 
 export ModelArch, TrainConfig, ModelState
