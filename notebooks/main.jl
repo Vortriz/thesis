@@ -47,7 +47,7 @@ end
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    const T = 4
+    const T = 2
     const rng = MersenneTwister(1234)
     const TB_LOGGING = false
 
@@ -59,14 +59,12 @@ begin
         collapse_method=Normal(),
     )
 
-    initial_ensemble = gen_dist(
-        Haar(),
+    initial_ensemble = Haar(
         rng;
         n_qubits=arch.n_data,
         n_samples=5000,
     )
-    target_ensemble = gen_dist(
-        Clustered(),
+    target_ensemble = Clustered(
         rng;
         n_qubits=arch.n_data,
         n_samples=5000,
@@ -99,7 +97,7 @@ begin
 end
 
 # ╔═╡ 0c83c042-7de8-4b61-a041-59d39f9d61bd
-target_bloch = plot_bloch_sphere(target_ensemble)
+target_bloch = plot_bloch_sphere(target_ensemble.ensemble)
 
 # ╔═╡ 1af82bcf-1787-403e-a4c8-8bc59f1bd995
 function train(
@@ -169,12 +167,11 @@ loss_history_fig = plot_loss_history(
 generated_trajectory = inference(
     arch,
     config,
-    gen_dist(
-        Haar(),
+    Haar(
         rng;
         n_qubits=arch.n_data,
         n_samples=config.batch_size,
-    ),
+    ).ensemble,
     params,
 );
 

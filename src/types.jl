@@ -5,14 +5,8 @@ const CBMatrix = AbstractMatrix{ComplexF64}
 const CState = AbstractVector{ComplexF64}
 
 
-export Distribution, Clustered, QKRLocalized, Circle, TFIM, Haar
-
+export Distribution
 abstract type Distribution end
-struct Clustered <: Distribution end
-struct QKRLocalized <: Distribution end
-struct Circle <: Distribution end
-struct TFIM <: Distribution end
-struct Haar <: Distribution end
 
 
 export CollapseMethod, Normal, Alternate
@@ -66,11 +60,13 @@ struct ModelArch{CM <: CollapseMethod}
     end
 end
 
-struct TrainConfig{TT <: TargetTrajectory}
+struct TrainConfig{TT <: TargetTrajectory, IE <: Distribution, TE <: Distribution}
     dataset_size::Int64
     batch_size::Int64
     T::Int64
+    initial_ensemble_type::Type{IE}
     initial_ensemble::CBArrayReg
+    target_ensemble_type::Type{TE}
     target_trajectory_type::TT
     target_trajectory::Vector{CBArrayReg}
     target_schedule::Vector{Int64}
@@ -81,22 +77,24 @@ end
 function TrainConfig(
     target_trajectory_type::Direct;
     batch_size::Int64,
-    initial_ensemble::CBArrayReg,
-    target_ensemble::CBArrayReg,
+    initial_ensemble::IE,
+    target_ensemble::TE,
     epoch_schedule::Vector{Int64},
     optimizer::Optimisers.AbstractRule,
-)
+) where {IE <: Distribution, TE <: Distribution}
     T = length(epoch_schedule)
     target_schedule = Device.ones(Int64, T)
 
-    dataset_size = target_ensemble.nbatch
-    target_trajectory = [target_ensemble]
+    dataset_size = target_ensemble.ensemble.nbatch
+    target_trajectory = [target_ensemble.ensemble]
 
-    return TrainConfig{Direct}(
+    return TrainConfig{Direct, IE, TE}(
         dataset_size,
         batch_size,
         T,
-        initial_ensemble,
+        typeof(initial_ensemble),
+        initial_ensemble.ensemble,
+        typeof(target_ensemble),
         target_trajectory_type,
         target_trajectory,
         target_schedule,
@@ -108,23 +106,27 @@ end
 function TrainConfig(
     target_trajectory_type::Diffusion;
     batch_size::Int64,
-    initial_ensemble::CBArrayReg,
+    initial_ensemble::IE,
+    target_ensemble::TE,
     target_trajectory::Vector{CBArrayReg},
     epoch_schedule::Vector{Int64},
     optimizer::Optimisers.AbstractRule,
-)
+) where {IE <: Distribution, TE <: Distribution}
     T = length(target_trajectory) - 1
     target_schedule = Device.range(; start=T, stop=1, step=-1) |> collect
 
     dataset_size = target_trajectory[begin].nbatch
 
     @assert length(epoch_schedule) == T "epoch_schedule must have the same length as the target trajectory (minus one)"
+    @assert typeof(initial_ensemble) == Haar "Diffusion based training must always start from Haar random ensemble"
 
-    return TrainConfig{Diffusion}(
+    return TrainConfig{Diffusion, IE, TE}(
         dataset_size,
         batch_size,
         T,
-        initial_ensemble,
+        typeof(initial_ensemble),
+        initial_ensemble.ensemble,
+        typeof(target_ensemble),
         target_trajectory_type,
         target_trajectory,
         target_schedule,

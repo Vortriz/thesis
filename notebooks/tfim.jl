@@ -108,11 +108,10 @@ end
 plot_tfim_stats(n)
 
 # ╔═╡ f8dc162d-21d5-430f-9ef0-fb894e968a34
-ensemble = gen_dist(
-    TFIM();
+ensemble = TFIM(;
     n_qubits=n,
     g=range(0.2, 0.4; length=10000) |> collect,
-)
+).ensemble
 
 # ╔═╡ 0dcbb940-3446-4b8c-9cda-9061a4d379b4
 scrambled_ensemble = scramble(

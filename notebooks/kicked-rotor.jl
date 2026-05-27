@@ -147,11 +147,10 @@ To show the localization of the eigenstates
 """
 
 # ╔═╡ 10adf359-d158-4911-88ff-e14af3c6b607
-eigenstates = gen_dist(
-    QKRLocalized();
+eigenstates = QKRLocalized(;
     n_qubits=10,
     n_samples=1024,
-)
+).ensemble
 
 # ╔═╡ 9e0f1db0-d94f-4212-a2f7-a9be795c8fe1
 plot_qkr_localization(eigenstates)
