@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.27
+# v1.0.0
 
 using Markdown
 using InteractiveUtils
@@ -96,17 +96,17 @@ To show the localization of the final state
 function QKR!(state)
     m_vec = [0:(dims/2-1); (-dims/2):-1]
     m_vec² = @. m_vec^2
-    x_vec = @. cos(2π * (0:(dims-1))/dims)
+    x_vec = @. cos(2π * (0:(dims-1)) / dims)
 
     E = zeros(N_qkr + 1)
-    E[1] = 1/2 * ħₛ^2 * sum(@. abs2(state) * m_vec²)
+    E[1] = 1 / 2 * ħₛ^2 * sum(@. abs2(state) * m_vec²)
 
     for N in 1:N_qkr
         @. state *= exp(-im * ħₛ * m_vec² / 2)
         ifft!(state)
         @. state *= exp(-im * K_qkr / ħₛ * x_vec)
         fft!(state)
-        E[N+1] = 1/2 * ħₛ^2 * sum(@. abs2(state) * m_vec²)
+        E[N+1] = 1 / 2 * ħₛ^2 * sum(@. abs2(state) * m_vec²)
     end
 
     return E
