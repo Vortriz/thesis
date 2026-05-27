@@ -40,7 +40,7 @@ struct ModelArch{CM <: CollapseMethod}
         n_ancilla::Int64,
         n_layers::Int64,
         ansatz_builder::Function,
-        collapse_method::CM=normal,
+        collapse_method::CM=Normal(),
     ) where {CM <: CollapseMethod}
         n_qubits = n_data + n_ancilla
         ansatz = ansatz_builder(n_qubits, n_layers)

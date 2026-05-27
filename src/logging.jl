@@ -1,5 +1,9 @@
 export log_hyperparams, save_run
 
+macro store(path, data)
+    return :( open(f -> serialize(f, $(esc(data))), $(esc(path)), "w") )
+end
+
 function log_hyperparams(
     tbl::TBLogger,
     arch::ModelArch,
@@ -18,12 +22,11 @@ function log_hyperparams(
     log_text(
         tbl,
         "collapse_method",
-        typeof(arch.collapse_method).parameters[1] |> string;
+        arch.collapse_method |> typeof |> string;
         step=0,
     )
 
-    for field in
-        [:dataset_size, :batch_size, :T, :target_schedule, :epoch_schedule, :optimizer]
+    for field in [:dataset_size, :batch_size, :T, :target_schedule, :epoch_schedule, :optimizer]
         log_text(
             tbl,
             field |> string,
@@ -32,10 +35,19 @@ function log_hyperparams(
         )
     end
 
+    for field in [:initial_ensemble_type, :target_ensemble_type]
+        log_text(
+            tbl,
+            field |> string,
+            getfield(config, field) |> string;
+            step=0,
+        )
+    end
+
     log_text(
         tbl,
         "target_trajectory_type",
-        typeof(config.target_trajectory_type).parameters[1] |> string;
+        config.target_trajectory_type |> typeof |> string;
         step=0,
     )
 
@@ -48,10 +60,9 @@ function save_run(
     save_path::String,
     arch::ModelArch, config::TrainConfig, rng::AbstractRNG,
     loss_history::Vector{Vector{Float64}}, loss_history_fig, params::Matrix{Float64},
-    target_bloch=nothing, generated_bloch=nothing,
 )
-    @save joinpath(save_path, "model.jld2") arch config rng
-    @save joinpath(save_path, "results.jld2") loss_history params
+    @store joinpath(save_path, "model.jls") (arch=arch, config=config, rng=rng)
+    @store joinpath(save_path, "results.jls") (loss_history=loss_history, params=params)
 
     save(joinpath(save_path, "loss_history.svg"), loss_history_fig)
 

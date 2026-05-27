@@ -5,6 +5,7 @@ using CUDA
 using Random
 using LinearAlgebra
 using Statistics
+using Serialization
 
 using Yao
 import Zygote
@@ -13,7 +14,6 @@ import Optimisers
 using Combinatorics: combinations
 using Bessels: besselj
 using StatsBase
-using JLD2
 
 using LaTeXStrings
 using CairoMakie
