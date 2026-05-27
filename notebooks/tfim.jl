@@ -109,7 +109,7 @@ plot_tfim_stats(n)
 
 # ╔═╡ f8dc162d-21d5-430f-9ef0-fb894e968a34
 ensemble = gen_dist(
-    Val(tfim);
+    TFIM();
     n_qubits=n,
     g=range(0.2, 0.4; length=10000) |> collect,
 )

@@ -56,24 +56,24 @@ begin
         n_ancilla=2,
         n_layers=4,
         ansatz_builder=EHA,
-        collapse_method=normal,
+        collapse_method=Normal(),
     )
 
     initial_ensemble = gen_dist(
-        Val(haar),
+        Haar(),
         rng;
         n_qubits=arch.n_data,
         n_samples=5000,
     )
     target_ensemble = gen_dist(
-        Val(clustered),
+        Clustered(),
         rng;
         n_qubits=arch.n_data,
         n_samples=5000,
     )
 
     config = TrainConfig(
-        Val(direct);
+        Direct();
         batch_size=200,
         initial_ensemble=initial_ensemble,
         target_ensemble=target_ensemble,
@@ -170,7 +170,7 @@ generated_trajectory = inference(
     arch,
     config,
     gen_dist(
-        Val(haar),
+        Haar(),
         rng;
         n_qubits=arch.n_data,
         n_samples=config.batch_size,

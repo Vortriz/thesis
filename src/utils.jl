@@ -1,7 +1,7 @@
 export collapse
 
 function collapse(
-    ::Val{alternate},
+    ::Alternate,
     n_data::Int64,
     n_ancilla::Int64,
     ensemble::CBArrayReg,
@@ -28,7 +28,7 @@ function collapse(
 end
 
 function collapse(
-    ::Val{normal},
+    ::Normal,
     n_data::Int64,
     n_ancilla::Int64,
     ensemble::CBArrayReg,

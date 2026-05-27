@@ -1,7 +1,7 @@
 export gen_dist
 
 function gen_dist(
-    ::Val{clustered},
+    ::Clustered,
     rng::AbstractRNG;
     n_qubits::Int64,
     n_samples::Int64,
@@ -17,7 +17,7 @@ function gen_dist(
 end
 
 function gen_dist(
-    ::Val{qkrlocalized};
+    ::QKRLocalized;
     n_qubits::Int64,
     K::Union{Float64, Vector{Float64}},
     ħₛ::Union{Float64, Vector{Float64}},
@@ -37,7 +37,7 @@ function gen_dist(
 end
 
 function gen_dist(
-    ::Val{circle};
+    ::Circle;
     n_qubits::Int64,
     n_samples::Int64,
 )::CBArrayReg
@@ -58,7 +58,7 @@ function gen_dist(
 end
 
 function gen_dist(
-    ::Val{tfim};
+    ::TFIM;
     n_qubits::Int64,
     g::Vector{Float64},
 )::CBArrayReg
@@ -71,7 +71,7 @@ function gen_dist(
 end
 
 function gen_dist(
-    ::Val{haar},
+    ::Haar,
     rng::AbstractRNG;
     n_qubits::Int64,
     n_samples::Int64,

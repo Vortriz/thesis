@@ -148,7 +148,7 @@ To show the localization of the eigenstates
 
 # ╔═╡ 10adf359-d158-4911-88ff-e14af3c6b607
 eigenstates = gen_dist(
-    Val(qkrlocalized);
+    QKRLocalized();
     n_qubits=10,
     n_samples=1024,
 )

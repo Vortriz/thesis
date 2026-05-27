@@ -1,39 +1,37 @@
-export Distribution, clustered, qkrlocalized, circle, tfim, haar
+export CBArrayReg, CBMatrix, CState
 
-@enum Distribution begin
-    clustered
-    qkrlocalized
-    circle
-    tfim
-    haar
-end
-
-export CollapseMethod, normal, alternate
-
-@enum CollapseMethod begin
-    normal
-    alternate
-end
-
-export TargetTrajectoryType, diffusion, direct
-
-@enum TargetTrajectoryType begin
-    diffusion
-    direct
-end
-
-
-export CBArrayReg, CBMatrix
-
-# ConcreteBatchedArrayReg
-const CBArrayReg{T, MT} = BatchedArrayReg{2, T, MT}
+const CBArrayReg{T, MT} = BatchedArrayReg{2, T, MT} # ConcreteBatchedArrayReg
 const CBMatrix = AbstractMatrix{ComplexF64}
 const CState = AbstractVector{ComplexF64}
 
 
+export Distribution, Clustered, QKRLocalized, Circle, TFIM, Haar
+
+abstract type Distribution end
+struct Clustered <: Distribution end
+struct QKRLocalized <: Distribution end
+struct Circle <: Distribution end
+struct TFIM <: Distribution end
+struct Haar <: Distribution end
+
+
+export CollapseMethod, Normal, Alternate
+
+abstract type CollapseMethod end
+struct Normal <: CollapseMethod end
+struct Alternate <: CollapseMethod end
+
+
+export TargetTrajectory, Diffusion, Direct
+
+abstract type TargetTrajectory end
+struct Diffusion <: TargetTrajectory end
+struct Direct <: TargetTrajectory end
+
+
 export ModelArch, TrainConfig, ModelState
 
-struct ModelArch{CM}
+struct ModelArch{CM <: CollapseMethod}
     n_data::Int64
     n_ancilla::Int64
     n_qubits::Int64
@@ -48,13 +46,12 @@ struct ModelArch{CM}
         n_ancilla::Int64,
         n_layers::Int64,
         ansatz_builder::Function,
-        collapse_method::CollapseMethod=normal,
-    )
+        collapse_method::CM=normal,
+    ) where {CM <: CollapseMethod}
         n_qubits = n_data + n_ancilla
         ansatz = ansatz_builder(n_qubits, n_layers)
         ansatz_name = ansatz_builder |> nameof |> string
         n_params_ppb = ansatz |> parameters |> length
-        CM = collapse_method |> Val |> typeof
 
         return new{CM}(
             n_data,
@@ -64,12 +61,12 @@ struct ModelArch{CM}
             ansatz,
             ansatz_name,
             n_params_ppb,
-            Val(collapse_method),
+            collapse_method,
         )
     end
 end
 
-struct TrainConfig{TT}
+struct TrainConfig{TT <: TargetTrajectory}
     dataset_size::Int64
     batch_size::Int64
     T::Int64
@@ -82,7 +79,7 @@ struct TrainConfig{TT}
 end
 
 function TrainConfig(
-    ::Val{direct};
+    target_trajectory_type::Direct;
     batch_size::Int64,
     initial_ensemble::CBArrayReg,
     target_ensemble::CBArrayReg,
@@ -94,14 +91,13 @@ function TrainConfig(
 
     dataset_size = target_ensemble.nbatch
     target_trajectory = [target_ensemble]
-    TT = direct |> Val |> typeof
 
-    return TrainConfig{TT}(
+    return TrainConfig{Direct}(
         dataset_size,
         batch_size,
         T,
         initial_ensemble,
-        Val(direct),
+        target_trajectory_type,
         target_trajectory,
         target_schedule,
         epoch_schedule,
@@ -110,7 +106,7 @@ function TrainConfig(
 end
 
 function TrainConfig(
-    ::Val{diffusion};
+    target_trajectory_type::Diffusion;
     batch_size::Int64,
     initial_ensemble::CBArrayReg,
     target_trajectory::Vector{CBArrayReg},
@@ -123,14 +119,13 @@ function TrainConfig(
     dataset_size = target_trajectory[begin].nbatch
 
     @assert length(epoch_schedule) == T "epoch_schedule must have the same length as the target trajectory (minus one)"
-    TT = diffusion |> Val |> typeof
 
-    return TrainConfig{TT}(
+    return TrainConfig{Diffusion}(
         dataset_size,
         batch_size,
         T,
         initial_ensemble,
-        Val(diffusion),
+        target_trajectory_type,
         target_trajectory,
         target_schedule,
         epoch_schedule,
