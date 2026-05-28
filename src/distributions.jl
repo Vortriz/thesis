@@ -9,13 +9,12 @@ struct Clustered <: Distribution
         n_samples::Int64,
         spread::Float64=0.05,
     )
-        ensemble =
-            (
-                randn(rng, ComplexF64, (2^n_qubits, 1)) .+
-                spread * randn(rng, ComplexF64, (2^n_qubits, n_samples))
-            ) |> StorageType
+        ensemble = (
+            randn(rng, ComplexF64, (2^n_qubits, 1)) .+
+            spread * randn(rng, ComplexF64, (2^n_qubits, n_samples))
+        )
 
-        return new(ensemble |> batch_and_normalize)
+        return new(ensemble |> StorageType |> batch_and_normalize)
     end
 end
 
@@ -36,10 +35,12 @@ struct QKRLocalized <: Distribution
             ħₛ = fill(ħₛ, length(K))
         end
 
-        return new(reduce(
-            hcat,
-            [gen_qkrlocalized_states(n_qubits, K[i], ħₛ[i]) for i in eachindex(K)],
-        ) |> batch_and_normalize)
+        return new(
+            reduce(
+                hcat,
+                [gen_qkrlocalized_states(n_qubits, K[i], ħₛ[i]) for i in eachindex(K)],
+            ) |> batch_and_normalize,
+        )
     end
 end
 
@@ -56,14 +57,14 @@ struct Circle <: Distribution
 
         phis = rand(Float64, n_samples) * 2pi
         for i in 1:n_samples
-            ensemble[:, i] = (
-                [cos(phis[i]), sin(phis[i])]
-                .|>
-                ComplexF64
-            )
+            ensemble[:, i] = [cos(phis[i]), sin(phis[i])] .|> ComplexF64
         end
 
-        return new(ensemble |> StorageType |> batch_and_normalize)
+        return new(
+            ensemble
+            |> StorageType
+            |> batch_and_normalize,
+        )
     end
 end
 
@@ -79,7 +80,11 @@ struct TFIM <: Distribution
             ensemble[:, i] = eigenstates(gen_tfim_hamiltonian(n_qubits, gᵢ)).vectors[:, 1]
         end
 
-        return new(ensemble |> StorageType |> batch_and_normalize)
+        return new(
+            ensemble
+            |> StorageType
+            |> batch_and_normalize,
+        )
     end
 end
 
@@ -91,6 +96,10 @@ struct Haar <: Distribution
         n_qubits::Int64,
         n_samples::Int64,
     )
-        return new(randn(rng, ComplexF64, (2^n_qubits, n_samples)) |> StorageType |> batch_and_normalize)
+        return new(
+            randn(rng, ComplexF64, (2^n_qubits, n_samples))
+            |> StorageType
+            |> batch_and_normalize,
+        )
     end
 end
