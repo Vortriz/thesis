@@ -92,7 +92,7 @@ function scramble(
         trajectory[t+1] = current_ensemble
     end
 
-    return trajectory
+    return trajectory |> reverse
 end
 
 

@@ -113,7 +113,7 @@ function TrainConfig(
     optimizer::Optimisers.AbstractRule,
 ) where {IE <: Distribution, TE <: Distribution}
     T = length(target_trajectory) - 1
-    target_schedule = Device.range(; start=T, stop=1, step=-1) |> collect
+    target_schedule = Device.range(; start=1, stop=T, step=1) |> collect
 
     dataset_size = target_trajectory[begin].nbatch
 
