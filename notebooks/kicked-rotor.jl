@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 3814d626-327f-11f1-ade5-130603661e5c
-# Do not modify or remove this cell!
+# ╠═╡ show_logs = false
 begin
     import Pkg
 

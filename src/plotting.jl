@@ -1,37 +1,3 @@
-export plot_bloch_sphere
-
-function plot_bloch_sphere(ensemble::CBArrayReg)
-    ensemble = ensemble |> cpu
-    dims, n_samples = ensemble.state.size
-    if dims != 2
-        @info "Plotting on Bloch sphere is only available for 1 qubit system."
-        return
-    end
-
-    b = Bloch()
-    points = zeros(Float64, (3, n_samples))
-
-    for (i, s) in ensemble.state |> eachcol |> enumerate
-        s = s[1] * basis(2, 0) + s[2] * basis(2, 1)
-        points[:, i] =
-            [expect(sigmax(), s), expect(sigmay(), s), expect(sigmaz(), s)] |> real
-    end
-
-    add_points!(b, points)
-    b.point_size = [3]
-    fig, _ = render(b)
-
-    # To make the plot square and remove axes
-    # ax = Axis(fig[1, 1], aspect=1)
-    # hidedecorations!(ax)
-    # hidespines!(ax)
-    # colsize!(fig.layout, 1, Aspect(1, 1.0))
-    # resize_to_layout!(fig)
-
-    return fig
-end
-
-
 export plot_loss_history
 
 function plot_loss_history(
@@ -80,6 +46,46 @@ function plot_loss_history(
 end
 
 
+export plot_bloch_sphere
+
+function plot_bloch_sphere(ensemble::CBArrayReg; square=false)
+    ensemble = ensemble |> cpu
+    dims, n_samples = ensemble.state.size
+    if dims != 2
+        @info "Plotting on Bloch sphere is only available for 1 qubit system."
+        return
+    end
+
+    b = QT.Bloch()
+    points = zeros(Float64, (3, n_samples))
+
+    for (i, s) in ensemble.state |> eachcol |> enumerate
+        s = s[1] * basis(2, 0) + s[2] * basis(2, 1)
+        points[:, i] =
+            [
+                expect(sigmax(), s),
+                expect(sigmay(), s),
+                expect(sigmaz(), s),
+            ] |> real
+    end
+
+    QT.add_points!(b, points)
+    b.point_size = [3]
+    fig, _ = QT.render(b)
+
+    # To make the plot square and remove axes
+    if square == true
+        ax = Axis(fig[1, 1]; aspect=1)
+        hidedecorations!(ax)
+        hidespines!(ax)
+        colsize!(fig.layout, 1, Aspect(1, 1.0))
+        resize_to_layout!(fig)
+    end
+
+    return fig
+end
+
+
 export plot_trajectory_convergence
 
 function plot_trajectory_convergence(;
@@ -94,26 +100,41 @@ function plot_trajectory_convergence(;
         push!(distances, metric(ensemble.state, target_ensemble.state))
     end
 
-    metric_name = string(nameof(metric))
+    metric_name = metric |> nameof |> string
 
     fig = Figure()
     ax = Axis(
         fig[1, 1];
-        yscale=yscale,
-        xlabel="t",
-        ylabel="$metric_name \n (wrt Target Ensemble)",
         title=plot_title,
+        xlabel=L"t",
+        ylabel=rich(
+            rich(metric_name; font="mono"),
+            "\n (wrt Target Ensemble)",
+        ),
+        yscale=yscale,
+        xgridvisible=false,
+        ygridvisible=false,
     )
-    ax.xgridvisible = false
-    ax.ygridvisible = false
-    ax.yticks = 0:0.2:1
     if yscale == log10
         ylims!(ax, 1e-3, 1)
+        ax.yticks = LogTicks(-3:0)
+        ax.yminorticksvisible = true
+        ax.yminorticks = IntervalsBetween(5)
     else
         ylims!(ax, 0, 1)
     end
 
     scatter!(ax, 0:(length(distances)-1), distances)
+    hlines!(
+        ax,
+        distances[end];
+        color=:red,
+        alpha=0.4,
+        linestyle=:dash,
+        label="Final Loss = $(round(distances[end], digits=4))",
+    )
+    axislegend(ax; position=:rt)
+
     return fig
 end
 

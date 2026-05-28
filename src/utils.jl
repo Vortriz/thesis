@@ -151,7 +151,7 @@ function gen_qkrlocalized_states(
         U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
     end
 
-    return (U |> StorageType |> eigen).vectors
+    return eigen(U).vectors
 end
 
 

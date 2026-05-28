@@ -17,10 +17,12 @@ using StatsBase
 
 using LaTeXStrings
 using CairoMakie
-using QuantumToolbox
+using QuantumToolbox:
+    QuantumToolbox as QT,
+    eye, sigmax, sigmay, sigmaz, Qobj, basis, kron, expect
 
 using ProgressLogging: @progress
-using TensorBoardLogger, Logging
+using TensorBoardLogger: TBLogger, log_text
 
 
 export Device, StorageType

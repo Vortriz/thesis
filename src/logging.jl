@@ -1,7 +1,7 @@
 export log_hyperparams, save_run
 
 macro store(path, data)
-    return :( open(f -> serialize(f, $(esc(data))), $(esc(path)), "w") )
+    return :(open(f -> serialize(f, $(esc(data))), $(esc(path)), "w"))
 end
 
 function log_hyperparams(
@@ -26,7 +26,8 @@ function log_hyperparams(
         step=0,
     )
 
-    for field in [:dataset_size, :batch_size, :T, :target_schedule, :epoch_schedule, :optimizer]
+    for field in
+        [:dataset_size, :batch_size, :T, :target_schedule, :epoch_schedule, :optimizer]
         log_text(
             tbl,
             field |> string,
@@ -59,17 +60,11 @@ end
 function save_run(
     save_path::String,
     arch::ModelArch, config::TrainConfig, rng::AbstractRNG,
-    loss_history::Vector{Vector{Float64}}, loss_history_fig, params::Matrix{Float64},
+    params::Matrix{Float64}, loss_history_fig,
 )
     @store joinpath(save_path, "model.jls") (arch=arch, config=config, rng=rng)
-    @store joinpath(save_path, "results.jls") (loss_history=loss_history, params=params)
+    @store joinpath(save_path, "params.jls") params
 
     save(joinpath(save_path, "loss_history.svg"), loss_history_fig)
-
-    if target_bloch !== nothing && generated_bloch !== nothing
-        save(joinpath(save_path, "target_bloch.svg"), target_bloch)
-        save(joinpath(save_path, "generated_bloch.svg"), generated_bloch)
-    end
-
     return
 end

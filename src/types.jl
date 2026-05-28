@@ -4,6 +4,8 @@ const CBArrayReg{T, MT} = BatchedArrayReg{2, T, MT} # ConcreteBatchedArrayReg
 const CBMatrix = AbstractMatrix{ComplexF64}
 const CState = AbstractVector{ComplexF64}
 
+Base.convert(::Type{CBArrayReg}, x::CBMatrix) = x |> StorageType |> batch_and_normalize
+
 
 export Distribution
 abstract type Distribution end

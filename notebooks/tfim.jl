@@ -90,7 +90,7 @@ function plot_tfim_stats(n::Int64)
 
     for ax in [ax_e, ax_f, ax_m]
         ax.xlabel = L"g"
-        ax.xgridvisible = false;
+        ax.xgridvisible = false
         ax.ygridvisible = false
         ax.xscale = log10
         ax.xticks = LogTicks(-1:1)
