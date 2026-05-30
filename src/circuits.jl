@@ -18,7 +18,7 @@ function scramble_circuit(n_qubits::Int64)::ChainBlock{2}
         push!(circuit, RZZ(n_qubits, i, j))
     end
 
-    return circuit
+    return Optimise.canonicalize(circuit)
 end
 
 
@@ -43,7 +43,7 @@ function HEA(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
         push!(layer, cz(i, j))
     end
 
-    return layer^n_layers
+    return Optimise.canonicalize(layer^n_layers)
 end
 
 
@@ -77,5 +77,5 @@ function EHA(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
         push!(layer, Uₑₙₜ(i))
     end
 
-    return layer^n_layers
+    return Optimise.canonicalize(layer^n_layers)
 end
