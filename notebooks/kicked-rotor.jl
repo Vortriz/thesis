@@ -1,29 +1,22 @@
 ### A Pluto.jl notebook ###
-# v1.0.0
+# v1.0.1
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 3814d626-327f-11f1-ade5-130603661e5c
-# ╠═╡ show_logs = false
 begin
     import Pkg
 
     # activate the shared project environment
     Pkg.activate(Base.current_project())
+
+    base_path = joinpath(@__DIR__, "..")
+    Pkg.develop(Pkg.PackageSpec(; path=base_path))
     Pkg.instantiate()
-end
 
-# ╔═╡ d622c2e2-919b-4040-8189-d99e92713b4e
-begin
-    include("../src/QML.jl")
-    using .QML
-end
-
-# ╔═╡ 6bf43aa5-1296-4880-880c-427c0d3dfea3
-begin
+    using GQML
     using CairoMakie
-    using Bessels
     using LinearAlgebra
     using FFTW
     using Statistics
@@ -55,14 +48,14 @@ function plot_ckr_phase_space()
 
     for i in range(0, 2pi, 20)
         x, p = zeros(N_ckr), zeros(N_ckr)
-        x[1] = i
+        x[begin] = i
         ckr_step!(x, p)
         scatter!(ax, x, p; markersize=2, color=:black)
     end
 
     for i in range(0, 2pi, 100)
         x, p = zeros(N_ckr), zeros(N_ckr)
-        p[1] = i
+        p[begin] = i
         ckr_step!(x, p)
         scatter!(ax, x, p; markersize=2, color=:black)
     end
@@ -99,7 +92,7 @@ function QKR!(state)
     x_vec = @. cos(2π * (0:(dims-1)) / dims)
 
     E = zeros(N_qkr + 1)
-    E[1] = 1 / 2 * ħₛ^2 * sum(@. abs2(state) * m_vec²)
+    E[begin] = 1 / 2 * ħₛ^2 * sum(@. abs2(state) * m_vec²)
 
     for N in 1:N_qkr
         @. state *= exp(-im * ħₛ * m_vec² / 2)
@@ -147,18 +140,17 @@ To show the localization of the eigenstates
 """
 
 # ╔═╡ 10adf359-d158-4911-88ff-e14af3c6b607
-eigenstates = QKRLocalized(;
+eigenstates = QKRLocalizedDist(;
     n_qubits=10,
-    n_samples=1024,
-).ensemble
+    K=12.0,
+    ħₛ=0.7,
+).register
 
 # ╔═╡ 9e0f1db0-d94f-4212-a2f7-a9be795c8fe1
 plot_qkr_localization(eigenstates)
 
 # ╔═╡ Cell order:
 # ╟─3814d626-327f-11f1-ade5-130603661e5c
-# ╠═d622c2e2-919b-4040-8189-d99e92713b4e
-# ╠═6bf43aa5-1296-4880-880c-427c0d3dfea3
 # ╟─35e4f6ac-f3b7-497d-a997-4821d024eae8
 # ╠═311e3ddf-25a0-4c28-ac5d-1f753c2cf7e4
 # ╠═30c6cfbf-23fd-4faf-95e6-4786316603f2

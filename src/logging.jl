@@ -1,4 +1,4 @@
-export log_hyperparams, save_run
+export log_hyperparams, log_optim, save_run
 
 macro store(path, data)
     return :(open(f -> serialize(f, $(esc(data))), $(esc(path)), "w"))
@@ -6,28 +6,26 @@ end
 
 function log_hyperparams(
     tbl::TBLogger,
-    arch::ModelArch,
+    ansatz::AbstractAnsatz,
     config::TrainConfig,
-    rng::AbstractRNG,
 )
-    for field in [:n_data, :n_ancilla, :n_qubits, :n_layers, :ansatz_name, :n_params_ppb]
+    for field in [:n_data, :n_ancilla, :n_qubits, :n_layers]
         log_text(
             tbl,
             field |> string,
-            getfield(arch, field);
+            getfield(ansatz, field);
             step=0,
         )
     end
 
     log_text(
         tbl,
-        "collapse_method",
-        arch.collapse_method |> typeof |> string;
+        "measurement",
+        ansatz.measurement |> typeof |> string;
         step=0,
     )
 
-    for field in
-        [:dataset_size, :batch_size, :T, :target_schedule, :epoch_schedule, :optimizer]
+    for field in [:dataset_size, :batch_size, :T, :epoch_schedule]
         log_text(
             tbl,
             field |> string,
@@ -36,33 +34,32 @@ function log_hyperparams(
         )
     end
 
-    for field in [:initial_ensemble_type, :target_ensemble_type]
-        log_text(
-            tbl,
-            field |> string,
-            getfield(config, field) |> string;
-            step=0,
-        )
-    end
-
     log_text(
         tbl,
-        "target_trajectory_type",
-        config.target_trajectory_type |> typeof |> string;
+        "trajectory",
+        config.trajectory |> typeof |> string;
         step=0,
     )
+end
 
-    log_text(tbl, "rng", rng; step=0)
-
-    return
+function log_optim(
+    tbl::TBLogger,
+    optimizer::Optimisers.AbstractRule,
+)
+    log_text(
+        tbl,
+        "optimizer",
+        string(optimizer);
+        step=0,
+    )
 end
 
 function save_run(
     save_path::String,
-    arch::ModelArch, config::TrainConfig, rng::AbstractRNG,
+    ansatz::AbstractAnsatz, config::TrainConfig,
     params::Matrix{Float64}, loss_history_fig,
 )
-    @store joinpath(save_path, "model.jls") (arch=arch, config=config, rng=rng)
+    @store joinpath(save_path, "model.jls") (ansatz=ansatz, config=config)
     @store joinpath(save_path, "params.jls") params
 
     save(joinpath(save_path, "loss_history.svg"), loss_history_fig)

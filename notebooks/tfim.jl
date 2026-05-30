@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v1.0.0
+# v1.0.1
 
 using Markdown
 using InteractiveUtils
@@ -10,34 +10,26 @@ begin
 
     # activate the shared project environment
     Pkg.activate(Base.current_project())
-    Pkg.instantiate()
-end
 
-# ╔═╡ feb4db6c-31c4-4990-b895-884d7044af9c
-begin
-    include("../src/QML.jl")
-    using .QML
-end
+    base_path = joinpath(@__DIR__, "..")
+    Pkg.develop(Pkg.PackageSpec(; path=base_path))
 
-# ╔═╡ 0d8c8dd0-03e0-43a6-9bc4-9126b0b567f3
-begin
+    using GQML
     using QuantumToolbox
     using LinearAlgebra
     using CairoMakie
-    using Random
 end
 
 # ╔═╡ 8bc42b3f-8bec-47c7-9158-0e671185af85
 begin
     const n = 4
     const g = 1
-    rng = MersenneTwister(123)
 end;
 
 # ╔═╡ 09a3be29-1f6e-4dd3-84fe-3ebff853aee5
 function ground(H::AbstractQuantumObject{Operator})
     evd = eigenstates(H)
-    return real(evd.values[1]), evd.vectors[:, 1]
+    return real(evd.values[begin]), evd.vectors[:, begin]
 end
 
 # ╔═╡ c3ab47f6-89a6-4cce-8b3f-a12696f345cf
@@ -55,7 +47,8 @@ $$M = \sum_c \left\lvert \braket{c | \psi_0} \right\rvert^2 \cdot \left\lvert \f
 
 # ╔═╡ 2604b2b4-d88d-44ff-adcb-c5715b1437f8
 function plot_tfim_stats(n::Int64)
-    ref_ground_energy, ref_ground_state = gen_tfim_hamiltonian(n, 0.0) |> ground
+    ref_ground_energy, ref_ground_state =
+        gen_tfim_hamiltonian(; n_qubits=n, g=0.0) |> ground
 
     N = 100
     g_vals = range(0.1, 10; length=N)
@@ -64,7 +57,7 @@ function plot_tfim_stats(n::Int64)
     magnetization_vals = zeros(Float64, N)
 
     for (i, gᵢ) in enumerate(g_vals)
-        ground_energy, ground_state = gen_tfim_hamiltonian(n, gᵢ) |> ground
+        ground_energy, ground_state = gen_tfim_hamiltonian(; n_qubits=n, g=gᵢ) |> ground
         energy_vals[i] = ground_energy
         fidelity_vals[i] = abs2(ref_ground_state' * ground_state)
         magnetization_vals[i] = magnetization(ground_state)
@@ -108,29 +101,26 @@ end
 plot_tfim_stats(n)
 
 # ╔═╡ f8dc162d-21d5-430f-9ef0-fb894e968a34
-ensemble = TFIM(;
+tfim_dist = TFIMDist(;
     n_qubits=n,
     g=range(0.2, 0.4; length=10000) |> collect,
-).ensemble
+)
 
 # ╔═╡ 0dcbb940-3446-4b8c-9cda-9061a4d379b4
-scrambled_ensemble = scramble(
-    rng;
+scrambled_dist = scramble(;
     n_qubits=n,
-    ensemble=ensemble,
+    distribution=tfim_dist,
     weight_schedule=range(3, 4; length=4) |> collect,
 )[end]
 
 # ╔═╡ 0012a59f-0a5a-458b-bb9e-dbc53070923e
-plot_tfim_magnetization_dist(ensemble)
+plot_tfim_magnetization_dist(tfim_dist.register)
 
 # ╔═╡ 74c77d23-42c7-4759-b959-a65168eb9a58
-plot_tfim_magnetization_dist(scrambled_ensemble)
+plot_tfim_magnetization_dist(scrambled_dist.register)
 
 # ╔═╡ Cell order:
 # ╟─62021008-0938-432e-9f97-73c5e4d64513
-# ╠═feb4db6c-31c4-4990-b895-884d7044af9c
-# ╠═0d8c8dd0-03e0-43a6-9bc4-9126b0b567f3
 # ╠═8bc42b3f-8bec-47c7-9158-0e671185af85
 # ╟─09a3be29-1f6e-4dd3-84fe-3ebff853aee5
 # ╟─c3ab47f6-89a6-4cce-8b3f-a12696f345cf

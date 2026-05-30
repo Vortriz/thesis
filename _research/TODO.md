@@ -1,8 +1,7 @@
-- https://github.com/JuliaDynamics/DrWatson.jl
 - extract common code from reports and presentations
 - fix paths in `reports/PRJ501/report.typ` and `presentations/2026-03-21/presentation.typ`
 - port `archive/training_strategies`
 - recreate important results from `archive/saves`
 - unit tests
-- if TensorBoardLogger works, move it to ext
-- understand and fix rng (const rng just feels weird)
+- TensorBoardLogger ext
+- CUDA ext

@@ -30,7 +30,7 @@ function plot_loss_history(
         )
     end
 
-    final_loss = get_final_training_loss(loss_history)
+    final_loss = last(loss_history[end], 10) |> mean
     hlines!(
         ax,
         final_loss;
@@ -48,9 +48,9 @@ end
 
 export plot_bloch_sphere
 
-function plot_bloch_sphere(ensemble::CBArrayReg; square=false)
-    ensemble = ensemble |> cpu
-    dims, n_samples = ensemble.state.size
+function plot_bloch_sphere(register::Register; square=false)
+    register = register |> cpu
+    dims, n_samples = register.state.size
     if dims != 2
         @info "Plotting on Bloch sphere is only available for 1 qubit system."
         return
@@ -59,7 +59,7 @@ function plot_bloch_sphere(ensemble::CBArrayReg; square=false)
     b = QT.Bloch()
     points = zeros(Float64, (3, n_samples))
 
-    for (i, s) in ensemble.state |> eachcol |> enumerate
+    for (i, s) in register.state |> eachcol |> enumerate
         s = s[1] * basis(2, 0) + s[2] * basis(2, 1)
         points[:, i] =
             [
@@ -89,15 +89,18 @@ end
 export plot_trajectory_convergence
 
 function plot_trajectory_convergence(;
-    trajectory::Vector{CBArrayReg},
-    target_ensemble::CBArrayReg,
+    trajectory::T,
+    target_dist::D,
     metric::Function,
     yscale::Function=identity,
     plot_title::String,
-)
+) where {T <: AbstractTrajectory, D <: AbstractDist}
     distances = Float64[]
-    for ensemble in trajectory
-        push!(distances, metric(ensemble.state, target_ensemble.state))
+    for step in trajectory.steps
+        push!(
+            distances,
+            metric(step.register.state, target_dist.register.state),
+        )
     end
 
     metric_name = metric |> nameof |> string
@@ -163,11 +166,11 @@ function plot_qkr_localization(amplitudes::Vector{Float64})
     return fig
 end
 
-function plot_qkr_localization(ensemble::CBArrayReg)
-    ensemble = ensemble |> cpu
-    dims, n = size(ensemble.state)
+function plot_qkr_localization(register::Register)
+    register = register |> cpu
+    dims, n = size(register.state)
     avg_amplitudes = zeros(Float64, dims)
-    for ψ in ensemble.state |> eachcol
+    for ψ in register.state |> eachcol
         amplitudes = get_centered_amplitudes(ψ)
         avg_amplitudes += amplitudes
     end
@@ -179,10 +182,10 @@ end
 
 export plot_tfim_magnetization_dist
 
-function plot_tfim_magnetization_dist(ensemble::CBArrayReg)
-    ensemble = ensemble |> cpu
-    magnetization_vals = zeros(Float64, ensemble.nbatch)
-    for (i, ψ) in ensemble.state |> eachcol |> enumerate
+function plot_tfim_magnetization_dist(register::Register)
+    register = register |> cpu
+    magnetization_vals = zeros(Float64, register.nbatch)
+    for (i, ψ) in register.state |> eachcol |> enumerate
         magnetization_vals[i] = magnetization(ψ)
     end
 

@@ -1,146 +1,150 @@
-export CBArrayReg, CBMatrix, CState
+export Register, BatchState, State
 
-const CBArrayReg{T, MT} = BatchedArrayReg{2, T, MT} # ConcreteBatchedArrayReg
-const CBMatrix = AbstractMatrix{ComplexF64}
-const CState = AbstractVector{ComplexF64}
+const Register{T, MT} = BatchedArrayReg{2, T, MT}
+const BatchState = AbstractMatrix{ComplexF64}
+const State = AbstractVector{ComplexF64}
 
-Base.convert(::Type{CBArrayReg}, x::CBMatrix) = x |> StorageType |> batch_and_normalize
-
-
-export Distribution
-abstract type Distribution end
+Base.convert(::Type{Register}, x::Matrix{ComplexF64}) =
+    x |> BatchedArrayReg |> transpose_storage
 
 
-export CollapseMethod, Normal, Alternate
+export AbstractDist, ArbitraryDist
 
-abstract type CollapseMethod end
-struct Normal <: CollapseMethod end
-struct Alternate <: CollapseMethod end
-
-
-export TargetTrajectory, Diffusion, Direct
-
-abstract type TargetTrajectory end
-struct Diffusion <: TargetTrajectory end
-struct Direct <: TargetTrajectory end
+abstract type AbstractDist end
+struct ArbitraryDist <: AbstractDist
+    register::Register
+end
 
 
-export ModelArch, TrainConfig, ModelState
+export AbstractTrajectory, Diffusion, Direct
 
-struct ModelArch{CM <: CollapseMethod}
+abstract type AbstractTrajectory end
+struct Direct <: AbstractTrajectory
+    steps::Vector{AbstractDist}
+end
+struct Diffusion <: AbstractTrajectory
+    steps::Vector{AbstractDist}
+end
+
+
+export AbstractMeasurement, Normal, Alternate
+
+abstract type AbstractMeasurement end
+struct Normal <: AbstractMeasurement end
+struct Alternate <: AbstractMeasurement end
+
+
+export AbstractAnsatz, HEA, EHA
+
+abstract type AbstractAnsatz end
+
+struct HEA{M <: AbstractMeasurement} <: AbstractAnsatz
     n_data::Int64
     n_ancilla::Int64
     n_qubits::Int64
     n_layers::Int64
-    ansatz::ChainBlock{2}
-    ansatz_name::String
-    n_params_ppb::Int64 # Number of parameters per PQC block
-    collapse_method::CM
+    n_params::Int64
+    circuit::ChainBlock{2}
+    measurement::M
 
-    function ModelArch(;
+    function HEA(;
         n_data::Int64,
         n_ancilla::Int64,
         n_layers::Int64,
-        ansatz_builder::Function,
-        collapse_method::CM=Normal(),
-    ) where {CM <: CollapseMethod}
+        measurement::M,
+    ) where {M <: AbstractMeasurement}
         n_qubits = n_data + n_ancilla
-        ansatz = ansatz_builder(n_qubits, n_layers)
-        ansatz_name = ansatz_builder |> nameof |> string
-        n_params_ppb = ansatz |> parameters |> length
+        circuit = HEA_circuit(n_qubits, n_layers)
+        n_params = circuit |> parameters |> length
 
-        return new{CM}(
+        return new{M}(
             n_data,
             n_ancilla,
             n_qubits,
             n_layers,
-            ansatz,
-            ansatz_name,
-            n_params_ppb,
-            collapse_method,
+            n_params,
+            circuit,
+            measurement,
         )
     end
 end
 
-struct TrainConfig{TT <: TargetTrajectory, IE <: Distribution, TE <: Distribution}
+struct EHA{M <: AbstractMeasurement} <: AbstractAnsatz
+    n_data::Int64
+    n_ancilla::Int64
+    n_qubits::Int64
+    n_layers::Int64
+    n_params::Int64
+    circuit::ChainBlock{2}
+    measurement::M
+
+    function EHA(;
+        n_data::Int64,
+        n_ancilla::Int64,
+        n_layers::Int64,
+        measurement::M,
+    ) where {M <: AbstractMeasurement}
+        n_qubits = n_data + n_ancilla
+        circuit = EHA_circuit(n_qubits, n_layers)
+        n_params = circuit |> parameters |> length
+
+        return new{M}(
+            n_data,
+            n_ancilla,
+            n_qubits,
+            n_layers,
+            n_params,
+            circuit,
+            measurement,
+        )
+    end
+end
+
+
+export TrainConfig, ModelState
+
+struct TrainConfig{TT <: AbstractTrajectory}
     dataset_size::Int64
     batch_size::Int64
     T::Int64
-    initial_ensemble_type::Type{IE}
-    initial_ensemble::CBArrayReg
-    target_ensemble_type::Type{TE}
-    target_trajectory_type::TT
-    target_trajectory::Vector{CBArrayReg}
-    target_schedule::Vector{Int64}
+    trajectory::TT
     epoch_schedule::Vector{Int64}
-    optimizer::Optimisers.AbstractRule
 end
 
 function TrainConfig(
-    target_trajectory_type::Direct;
+    trajectory::Direct;
     batch_size::Int64,
-    initial_ensemble::IE,
-    target_ensemble::TE,
     epoch_schedule::Vector{Int64},
-    optimizer::Optimisers.AbstractRule,
-) where {IE <: Distribution, TE <: Distribution}
+)
     T = length(epoch_schedule)
-    target_schedule = Device.ones(Int64, T)
+    @assert length(trajectory.steps) == 2 "Direct trajectory must have [initial, target] steps"
 
-    dataset_size = target_ensemble.ensemble.nbatch
-    target_trajectory = [target_ensemble.ensemble]
+    dataset_size = trajectory.steps[end].register.nbatch
 
-    return TrainConfig{Direct, IE, TE}(
+    return TrainConfig{Direct}(
         dataset_size,
         batch_size,
         T,
-        typeof(initial_ensemble),
-        initial_ensemble.ensemble,
-        typeof(target_ensemble),
-        target_trajectory_type,
-        target_trajectory,
-        target_schedule,
+        trajectory,
         epoch_schedule,
-        optimizer,
     )
 end
 
 function TrainConfig(
-    target_trajectory_type::Diffusion;
+    trajectory::Diffusion;
     batch_size::Int64,
-    initial_ensemble::IE,
-    target_ensemble::TE,
-    target_trajectory::Vector{CBArrayReg},
     epoch_schedule::Vector{Int64},
-    optimizer::Optimisers.AbstractRule,
-) where {IE <: Distribution, TE <: Distribution}
-    T = length(target_trajectory) - 1
-    target_schedule = Device.range(; start=1, stop=T, step=1) |> collect
+)
+    T = length(epoch_schedule)
+    @assert length(trajectory.steps) == T + 1 "Diffusion trajectory must have T + 1 steps"
 
-    dataset_size = target_trajectory[begin].nbatch
+    dataset_size = trajectory.steps[end].register.nbatch
 
-    @assert length(epoch_schedule) == T "epoch_schedule must have the same length as the target trajectory (minus one)"
-    @assert typeof(initial_ensemble) == Haar "Diffusion based training must always start from Haar random ensemble"
-
-    return TrainConfig{Diffusion, IE, TE}(
+    return TrainConfig{Diffusion}(
         dataset_size,
         batch_size,
         T,
-        typeof(initial_ensemble),
-        initial_ensemble.ensemble,
-        typeof(target_ensemble),
-        target_trajectory_type,
-        target_trajectory,
-        target_schedule,
+        trajectory,
         epoch_schedule,
-        optimizer,
     )
-end
-
-mutable struct ModelState
-    current_params::Vector{Float64}
-    current_ensemble_batch::CBArrayReg
-    target_matrix_batch::CBMatrix
-
-    ModelState() = new()
 end

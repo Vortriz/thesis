@@ -3,8 +3,8 @@ export mmd_distance, wasserstein_distance, optimal_transport_plan, sinkhorn_dist
 
 # Maximum Mean Discrepancy (MMD)
 function mmd_distance(
-    ensemble1::CBMatrix,
-    ensemble2::CBMatrix,
+    ensemble1::BatchState,
+    ensemble2::BatchState,
 )::Float64
 
     ensemble1_c = ensemble1'
@@ -56,8 +56,8 @@ end
 
 # Wasserstein (IPOT)
 function wasserstein_distance(
-    ensemble1::CBMatrix,
-    ensemble2::CBMatrix;
+    ensemble1::BatchState,
+    ensemble2::BatchState;
     β::Float64=0.05,
     max_iter::Int=500,
     L::Int=3,

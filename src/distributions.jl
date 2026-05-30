@@ -1,27 +1,29 @@
-export Clustered, QKRLocalized, XZCircle, TFIM, Haar
+export ClusteredDist
 
-struct Clustered <: Distribution
-    ensemble::CBArrayReg
+struct ClusteredDist <: AbstractDist
+    register::Register
 
-    function Clustered(
-        rng::AbstractRNG;
+    function ClusteredDist(;
         n_qubits::Int64,
         n_samples::Int64,
         spread::Float64=0.05,
     )
         ensemble = (
-            randn(rng, ComplexF64, (2^n_qubits, 1)) .+
-            spread * randn(rng, ComplexF64, (2^n_qubits, n_samples))
+            randn(RNG, ComplexF64, (2^n_qubits, 1)) .+
+            spread * randn(RNG, ComplexF64, (2^n_qubits, n_samples))
         )
 
         return new(ensemble)
     end
 end
 
-struct QKRLocalized <: Distribution
-    ensemble::CBArrayReg
 
-    function QKRLocalized(;
+export QKRLocalizedDist
+
+struct QKRLocalizedDist <: AbstractDist
+    register::Register
+
+    function QKRLocalizedDist(;
         n_qubits::Int64,
         K::Union{Float64, Vector{Float64}},
         ħₛ::Union{Float64, Vector{Float64}},
@@ -36,19 +38,25 @@ struct QKRLocalized <: Distribution
 
         ensemble = reduce(
             hcat,
-            [gen_qkrlocalized_states(n_qubits, K[i], ħₛ[i]) for i in eachindex(K)],
+            [
+                gen_qkrlocalized_states(; n_qubits=n_qubits, K=K[i], ħₛ=ħₛ[i]) for
+                i in eachindex(K)
+            ],
         )
 
         return new(ensemble)
     end
 end
 
-struct XZCircle <: Distribution
-    ensemble::CBArrayReg
 
-    function XZCircle(; n_samples::Int64)
+export CircleDist
+
+struct CircleDist <: AbstractDist
+    register::Register
+
+    function CircleDist(; n_samples::Int64)
         ensemble = zeros(ComplexF64, (2, n_samples))
-        phis = rand(Float64, n_samples) * 2pi
+        phis = rand(RNG, Float64, n_samples) * 2pi
 
         for i in 1:n_samples
             ensemble[:, i] = [cos(phis[i]), sin(phis[i])] .|> ComplexF64
@@ -58,13 +66,20 @@ struct XZCircle <: Distribution
     end
 end
 
-struct TFIM <: Distribution
-    ensemble::CBArrayReg
 
-    function TFIM(; n_qubits::Int64, g::Vector{Float64})
+export TFIMDist
+
+struct TFIMDist <: AbstractDist
+    register::Register
+
+    function TFIMDist(;
+        n_qubits::Int64,
+        g::Vector{Float64},
+    )
         ensemble = zeros(ComplexF64, (2^n_qubits, length(g)))
+
         for (i, gᵢ) in enumerate(g)
-            H = gen_tfim_hamiltonian(n_qubits, gᵢ)
+            H = gen_tfim_hamiltonian(; n_qubits=n_qubits, g=gᵢ)
             ensemble[:, i] = eigenstates(H).vectors[:, 1]
         end
 
@@ -72,10 +87,18 @@ struct TFIM <: Distribution
     end
 end
 
-struct Haar <: Distribution
-    ensemble::CBArrayReg
 
-    function Haar(rng::AbstractRNG; n_qubits::Int64, n_samples::Int64)
-        return new(randn(rng, ComplexF64, (2^n_qubits, n_samples)))
+export HaarDist
+
+struct HaarDist <: AbstractDist
+    register::Register
+
+    function HaarDist(;
+        n_qubits::Int64,
+        n_samples::Int64,
+    )
+        ensemble = randn(RNG, ComplexF64, (2^n_qubits, n_samples))
+
+        return new(ensemble)
     end
 end

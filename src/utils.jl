@@ -1,23 +1,46 @@
-export collapse
+export measure
 
-function collapse(
-    ::Alternate,
+function GQML.measure(
+    ::Normal;
     n_data::Int64,
     n_ancilla::Int64,
-    ensemble::CBArrayReg,
-)::CBMatrix
-
-    batch_size = ensemble.nbatch
+    register::Register,
+)::BatchState
+    batch_size = register.nbatch
     n_a_dim = 1 << n_ancilla
     n_d_dim = 1 << n_data
 
     indices::Vector{Int64} = Zygote.ignore() do
         col_offsets = (0:(batch_size-1)) .* n_a_dim
-        res = measure(ensemble, 1:n_ancilla)
+        # Measure HIGHER bits (the data bits)
+        res = measure(register, (n_data+1):(n_data+n_ancilla); rng=RNG)
         return vec(Int.(res)) .+ 1 .+ col_offsets
     end
 
-    state_3d = reshape(ensemble.state, n_a_dim, n_d_dim, batch_size)
+    state_2d = reshape(register.state, n_d_dim, :)
+    collapsed_state = state_2d[:, indices]
+
+    probs = sum(abs2, collapsed_state; dims=1)
+    return collapsed_state ./ sqrt.(probs .+ 1e-12)
+end
+
+function GQML.measure(
+    ::Alternate;
+    n_data::Int64,
+    n_ancilla::Int64,
+    register::Register,
+)::BatchState
+    batch_size = register.nbatch
+    n_a_dim = 1 << n_ancilla
+    n_d_dim = 1 << n_data
+
+    indices::Vector{Int64} = Zygote.ignore() do
+        col_offsets = (0:(batch_size-1)) .* n_a_dim
+        res = measure(register, 1:n_ancilla; rng=RNG)
+        return vec(Int.(res)) .+ 1 .+ col_offsets
+    end
+
+    state_3d = reshape(register.state, n_a_dim, n_d_dim, batch_size)
     state_permuted = permutedims(state_3d, (2, 1, 3))
     state_2d = reshape(state_permuted, n_d_dim, :)
 
@@ -27,96 +50,60 @@ function collapse(
     return collapsed_state ./ sqrt.(probs .+ 1e-12)
 end
 
-function collapse(
-    ::Normal,
-    n_data::Int64,
-    n_ancilla::Int64,
-    ensemble::CBArrayReg,
-)::CBMatrix
-
-    batch_size = ensemble.nbatch
-    n_a_dim = 1 << n_ancilla
-    n_d_dim = 1 << n_data
-
-    indices::Vector{Int64} = Zygote.ignore() do
-        col_offsets = (0:(batch_size-1)) .* n_a_dim
-        # Measure HIGHER bits (the data bits)
-        res = measure(ensemble, (n_data+1):(n_data+n_ancilla))
-        return vec(Int.(res)) .+ 1 .+ col_offsets
-    end
-
-    state_2d = reshape(ensemble.state, n_d_dim, :)
-    collapsed_state = state_2d[:, indices]
-
-    probs = sum(abs2, collapsed_state; dims=1)
-    return collapsed_state ./ sqrt.(probs .+ 1e-12)
-end
-
 
 export scramble
 
-function scramble(
-    rng::AbstractRNG;
+function scramble(;
     n_qubits::Int64,
-    ensemble::CBArrayReg,
+    distribution::D,
     weight_schedule::Vector{Float64},
-)::Vector{CBArrayReg}
+) where {D <: AbstractDist}
 
-    T = weight_schedule |> length
+    T = length(weight_schedule)
     circuit = scramble_circuit(n_qubits)
 
-    trajectory = Vector{CBArrayReg}(undef, T + 1)
-    trajectory[1] = copy(ensemble)
+    trajectory = Vector{AbstractDist}(undef, T + 1)
+    trajectory[begin] = deepcopy(distribution)
 
     for t in 1:T
-        current_ensemble = copy(ensemble)
+        reg = deepcopy(distribution.register)
 
-        for s in 1:ensemble.nbatch
-            reg = viewbatch(current_ensemble, s)
+        for r in 1:reg.nbatch
+            reg_view = viewbatch(reg, r)
             # Run through all steps up to the current timestep t
             for prev_t in 1:t
                 # Generate random parameters scaled by the weight schedule for this step
                 params = vcat(
                     weight_schedule[prev_t] .*
-                    (rand(rng, Float64, n_qubits * 3) .* (pi / 4) .- (pi / 8)),
+                    (rand(RNG, Float64, n_qubits * 3) .* (pi / 4) .- (pi / 8)),
                     weight_schedule[prev_t] .*
-                    (rand(rng, Float64, binomial(n_qubits, 2)) .* 0.2 .+ 0.4) ./
+                    (rand(RNG, Float64, binomial(n_qubits, 2)) .* 0.2 .+ 0.4) ./
                     (2.0 * sqrt(n_qubits)),
                 )
 
                 dispatch!(circuit, params)
-                apply!(reg, circuit)
+                apply!(reg_view, circuit)
             end
         end
 
-        trajectory[t+1] = current_ensemble
+        trajectory[t+1] = ArbitraryDist(reg)
     end
 
-    return trajectory |> reverse
+    return reverse(trajectory)
 end
 
 
-export batch_and_normalize
+# [TODO] yeet
+# export batch_and_normalize
 
-function batch_and_normalize(ensemble::Matrix{ComplexF64})::CBArrayReg
-    return ensemble |> BatchedArrayReg |> transpose_storage |> normalize!
-end
-
-function batch_and_normalize(ensemble::CuMatrix{ComplexF64})::CBArrayReg
-    return ensemble |> BatchedArrayReg |> normalize!
-end
-
-
-export get_final_training_loss
-
-function get_final_training_loss(loss_history::Vector{Vector{Float64}})::Float64
-    return last(loss_history[end], 10) |> mean
-end
+# function batch_and_normalize(register::CuMatrix{ComplexF64})::Register
+#     return register |> BatchedArrayReg |> normalize!
+# end
 
 
 export get_centered_amplitudes
 
-function get_centered_amplitudes(ψ::CState)
+function get_centered_amplitudes(ψ::State)
     dims = length(ψ)
     amplitudes = abs2.(ψ)
     _, idx = findmax(amplitudes)
@@ -129,11 +116,11 @@ end
 export gen_qkrlocalized_states
 
 # [MARK] try using QuantumToolbox.jl
-function gen_qkrlocalized_states(
+function gen_qkrlocalized_states(;
     n_qubits::Int64,
     K::Float64,
     ħₛ::Float64,
-)::CBMatrix
+)::BatchState
     dims = 2^n_qubits
     m_vec = [0:(dims/2-1); (-dims/2):-1]
     U = zeros(ComplexF64, (dims, dims))
@@ -157,7 +144,7 @@ end
 
 export gen_tfim_hamiltonian
 
-function gen_tfim_hamiltonian(
+function gen_tfim_hamiltonian(;
     n_qubits::Int64,
     g::Float64,
 )::AbstractQuantumObject{Operator}
@@ -165,6 +152,7 @@ function gen_tfim_hamiltonian(
         zeros(ComplexF64, (2^n_qubits, 2^n_qubits));
         dims=Tuple(fill(2, n_qubits)),
     )
+
     partial_term_1 = vcat(
         [sigmaz(), sigmaz()],
         fill(eye(2), n_qubits-2),
@@ -173,6 +161,7 @@ function gen_tfim_hamiltonian(
         [sigmax()],
         fill(eye(2), n_qubits-1),
     )
+
     for i in 0:(n_qubits-2)
         H -= reduce(kron, circshift(partial_term_1, i))
     end
@@ -183,10 +172,9 @@ function gen_tfim_hamiltonian(
     return H
 end
 
-
 export magnetization
 
-function magnetization(ψ::CState)
+function magnetization(ψ::State)
     n = ψ |> length |> log2 |> Int64
     M = 0
     for (i, ψᵢ) in enumerate(ψ)

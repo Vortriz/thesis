@@ -23,9 +23,9 @@ end
 
 
 # Hardware Efficient Ansatz
-export HEA
+export HEA_circuit
 
-function HEA(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
+function HEA_circuit(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
     register = 1:n_qubits
     entangle_pairs = if n_qubits == 2
         [(1, 2)]
@@ -48,7 +48,7 @@ end
 
 
 # Entanglement-variational Hardware-efficient Ansatz
-export EHA
+export EHA_circuit
 
 @const_gate Rxp::ComplexF64 = Rx(pi / 2) |> mat
 @const_gate Rxn::ComplexF64 = Rx(-pi / 2) |> mat
@@ -63,7 +63,7 @@ YY(i::Int64) = chain(
 
 Uₑₙₜ(i::Int64) = chain(XX(i), YY(i), ZZ(i))
 
-function EHA(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
+function EHA_circuit(n_qubits::Int64, n_layers::Int64)::ChainBlock{2}
     register = 1:n_qubits
 
     layer = chain(n_qubits)
