@@ -18,8 +18,6 @@ using LaTeXStrings
 using CairoMakie
 using QuantumToolbox:
     QuantumToolbox as QT,
-    eye, sigmax, sigmay, sigmaz, Qobj, basis,
-    kron, expect, eigenstates,
     AbstractQuantumObject, Operator
 
 using ProgressLogging: @progress

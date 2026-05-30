@@ -60,12 +60,12 @@ function plot_bloch_sphere(register::Register; square=false)
     points = zeros(Float64, (3, n_samples))
 
     for (i, s) in register.state |> eachcol |> enumerate
-        s = s[1] * basis(2, 0) + s[2] * basis(2, 1)
+        s = s[1] * QT.basis(2, 0) + s[2] * QT.basis(2, 1)
         points[:, i] =
             [
-                expect(sigmax(), s),
-                expect(sigmay(), s),
-                expect(sigmaz(), s),
+                QT.expect(QT.sigmax(), s),
+                QT.expect(QT.sigmay(), s),
+                QT.expect(QT.sigmaz(), s),
             ] |> real
     end
 

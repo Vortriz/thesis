@@ -80,7 +80,7 @@ struct TFIMDist <: AbstractDist
 
         for (i, gᵢ) in enumerate(g)
             H = gen_tfim_hamiltonian(; n_qubits=n_qubits, g=gᵢ)
-            ensemble[:, i] = eigenstates(H).vectors[:, 1]
+            ensemble[:, i] = QT.eigenstates(H).vectors[:, 1]
         end
 
         return new(ensemble)

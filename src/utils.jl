@@ -148,25 +148,25 @@ function gen_tfim_hamiltonian(;
     n_qubits::Int64,
     g::Float64,
 )::AbstractQuantumObject{Operator}
-    H = Qobj(
+    H = QT.Qobj(
         zeros(ComplexF64, (2^n_qubits, 2^n_qubits));
         dims=Tuple(fill(2, n_qubits)),
     )
 
     partial_term_1 = vcat(
         [sigmaz(), sigmaz()],
-        fill(eye(2), n_qubits-2),
+        fill(QT.eye(2), n_qubits-2),
     )
     partial_term_2 = vcat(
-        [sigmax()],
-        fill(eye(2), n_qubits-1),
+        [QT.sigmax()],
+        fill(QT.eye(2), n_qubits-1),
     )
 
     for i in 0:(n_qubits-2)
-        H -= reduce(kron, circshift(partial_term_1, i))
+        H -= reduce(QT.kron, circshift(partial_term_1, i))
     end
     for i in 0:(n_qubits-1)
-        H -= g * reduce(kron, circshift(partial_term_2, i))
+        H -= g * reduce(QT.kron, circshift(partial_term_2, i))
     end
 
     return H
