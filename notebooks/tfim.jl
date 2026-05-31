@@ -9,10 +9,12 @@ begin
     import Pkg
 
     # activate the shared project environment
-    Pkg.activate(Base.current_project())
+    Pkg.activate(@__DIR__)
 
-    base_path = joinpath(@__DIR__, "..")
+    # This file must always be executed from notebooks/ dir
+    base_path = ".."
     Pkg.develop(Pkg.PackageSpec(; path=base_path))
+    Pkg.instantiate()
 
     using GQML
     using QuantumToolbox

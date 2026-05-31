@@ -44,15 +44,12 @@ function train(
 
         @progress for epoch in 1:config.epoch_schedule[t]
             # Sample a batch from current register and target matrix
-            current_reg_batch = convert(
-                Register,
-                reduce(
-                    hcat,
-                    sample(
-                        eachcol(current_reg.state),
-                        config.batch_size;
-                        replace=false,
-                    ),
+            current_reg_batch::Register = reduce(
+                hcat,
+                sample(
+                    eachcol(current_reg.state),
+                    config.batch_size;
+                    replace=false,
                 ),
             )
 
@@ -87,13 +84,10 @@ function train(
             callback(loss)
         end
 
-        current_reg = convert(
-            Register,
-            apply_pqc(
-                ansatz,
-                current_reg,
-                current_params,
-            ),
+        current_reg::Register = apply_pqc(
+            ansatz,
+            current_reg,
+            current_params,
         )
 
         params[:, t] = copy(current_params)
@@ -118,13 +112,10 @@ function inference(
     for t in 1:config.T
         append_qubits!(current_reg, ansatz.n_ancilla)
 
-        current_reg = convert(
-            Register,
-            apply_pqc(
-                ansatz,
-                current_reg,
-                params[:, t],
-            ),
+        current_reg::Register = apply_pqc(
+            ansatz,
+            current_reg,
+            params[:, t],
         )
 
         trajectory[t+1] = ArbitraryDist(current_reg)

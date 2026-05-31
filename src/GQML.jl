@@ -1,7 +1,5 @@
 module GQML
 
-using CUDA
-
 using Random
 using LinearAlgebra
 using Statistics
@@ -23,17 +21,6 @@ using QuantumToolbox:
 using ProgressLogging: @progress   # [TODO] get rid of this
 using PlutoSerialization
 
-
-export Device, StorageType
-
-# [TODO] move CUDA to ext
-const has_cuda = CUDA.functional()
-const Device = has_cuda ? CUDA : Base
-const StorageType = has_cuda ? CuArray : Array
-
-# Force CPU irrespective of GPU availability (for testing purposes)
-# const Device = Base
-# const StorageType = Array
 
 # Module's own RNG
 const RNG = Xoshiro(6868)

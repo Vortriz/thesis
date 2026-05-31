@@ -20,21 +20,23 @@ end
 
 # Based on https://github.com/xieyujia/IPOT/blob/master/ipot.py
 function optimal_transport_plan(
-    C::AbstractMatrix{Float64};
+    C::Matrix{Float64};
     β::Float64=0.05,
     max_iter::Int=500,
     L::Int=3,
-)::AbstractMatrix{Float64}
-
+)::Matrix{Float64}
     N1, N2 = size(C)
-    a1 = Device.fill(1.0 / N1, N1)
-    a2 = Device.fill(1.0 / N2, N2)
 
-    P = Device.fill(1.0 / (N1 * N2), N1, N2)
-    K = exp.(-C ./ β)
+    a1 = fill(1.0 / N1, N1)
+    a2 = fill(1.0 / N2, N2)
+
+    P = fill(1.0 / (N1 * N2), N1, N2)
+    K = @. exp(-C / β)
     Q = similar(P)
-    u = Device.ones(Float64, N1)
-    v = Device.ones(Float64, N2)
+
+    u = ones(Float64, N1)
+    v = ones(Float64, N2)
+
     Qv_buffer = similar(u)
     QTu_buffer = similar(v)
 

@@ -9,21 +9,20 @@ begin
     import Pkg
 
     # activate the shared project environment
-    Pkg.activate(Base.current_project())
+    Pkg.activate(@__DIR__)
 
-    base_path = joinpath(@__DIR__, "..")
+    # This file must always be executed from notebooks/ dir
+    base_path = ".."
     Pkg.develop(Pkg.PackageSpec(; path=base_path))
     Pkg.instantiate()
 
+    using CUDA
     using GQML
     import Dates
     import Optimisers
     import Logging
     using TensorBoardLogger
 end
-
-# ╔═╡ 95f1c7e6-b6e7-4301-be13-634dc1550b7a
-@info "Using: $(Device) with storage type: $(StorageType)"
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
@@ -40,10 +39,10 @@ begin
     initial_dist = HaarDist(;
         n_qubits=ansatz.n_data,
         n_samples=5000,
-    )
+    ) |> cu
     target_dist = CircleDist(;
         n_samples=5000,
-    )
+    ) |> cu
 
     config = TrainConfig(
         # Direct([initial_dist, target_dist]);
@@ -111,7 +110,6 @@ end
 
 # ╔═╡ Cell order:
 # ╟─7c3a8a85-b2b5-4dc7-9638-7b7d2d6f3a3e
-# ╟─95f1c7e6-b6e7-4301-be13-634dc1550b7a
 # ╠═7479301c-85c0-4773-bc5d-1195c7cb47ad
 # ╠═d5d5bd83-1e77-4d5f-a24c-a0e576fe1eff
 # ╠═de779e94-a981-4020-a5d8-ef25ba701015

@@ -6,7 +6,8 @@ const State = AbstractVector{ComplexF64}
 
 Base.convert(::Type{Register}, x::Matrix{ComplexF64}) =
     x |> BatchedArrayReg |> transpose_storage |> normalize!
-
+Base.convert(::Type{Register}, x::LinearAlgebra.Transpose{ComplexF64, Matrix{ComplexF64}}) =
+    x |> BatchedArrayReg |> normalize!
 
 export AbstractDist, ArbitraryDist
 

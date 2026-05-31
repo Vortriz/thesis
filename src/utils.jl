@@ -93,14 +93,6 @@ function scramble(;
 end
 
 
-# [TODO] yeet
-# export batch_and_normalize
-
-# function batch_and_normalize(register::CuMatrix{ComplexF64})::Register
-#     return register |> BatchedArrayReg |> normalize!
-# end
-
-
 export get_centered_amplitudes
 
 function get_centered_amplitudes(ψ::State)
@@ -154,11 +146,11 @@ function gen_tfim_hamiltonian(;
 
     partial_term_1 = vcat(
         [QT.sigmaz(), QT.sigmaz()],
-        fill(QT.eye(2), n_qubits-2),
+        fill(QT.eye(2), n_qubits - 2),
     )
     partial_term_2 = vcat(
         [QT.sigmax()],
-        fill(QT.eye(2), n_qubits-1),
+        fill(QT.eye(2), n_qubits - 1),
     )
 
     for i in 0:(n_qubits-2)
@@ -178,7 +170,7 @@ function magnetization(ψ::State)
     M = 0
     for (i, ψᵢ) in enumerate(ψ)
         ψᵢ_M = 0
-        for spin in digits(i-1; base=2, pad=n) |> reverse |> BitVector
+        for spin in digits(i - 1; base=2, pad=n) |> reverse |> BitVector
             ψᵢ_M += abs2(ψᵢ) * (spin ? 1 : -1)
         end
         ψᵢ_M /= n
