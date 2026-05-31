@@ -36,13 +36,15 @@ struct QKRLocalizedDist <: AbstractDist
             ħₛ = fill(ħₛ, length(K))
         end
 
-        ensemble = reduce(
-            hcat,
-            [
-                gen_qkrlocalized_states(; n_qubits=n_qubits, K=K[i], ħₛ=ħₛ[i]) for
-                i in eachindex(K)
-            ],
+        ensemble_gen = (
+            gen_qkr_operator(;
+                n_qubits=n_qubits,
+                K=K[i],
+                ħₛ=ħₛ[i],
+            ) |> eigenstates |> evd -> evd.vectors
+            for i in eachindex(K)
         )
+        ensemble = reduce(hcat, ensemble_gen)
 
         return new(ensemble)
     end
@@ -54,13 +56,12 @@ export CircleDist
 struct CircleDist <: AbstractDist
     register::Register
 
-    function CircleDist(; n_samples::Int64)
-        ensemble = zeros(ComplexF64, (2, n_samples))
-        phis = rand(RNG, Float64, n_samples) * 2pi
-
-        for i in 1:n_samples
-            ensemble[:, i] = [cos(phis[i]), sin(phis[i])] .|> ComplexF64
-        end
+    function CircleDist(;
+        n_samples::Int64,
+    )
+        phis = rand(Float64, n_samples) * 2pi
+        ensemble_gen = ([cos(phis[i]), sin(phis[i])] .|> ComplexF64 for i in 1:n_samples)
+        ensemble = reduce(hcat, ensemble_gen)
 
         return new(ensemble)
     end

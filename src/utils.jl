@@ -113,14 +113,13 @@ function get_centered_amplitudes(ψ::State)
 end
 
 
-export gen_qkrlocalized_states
+export gen_qkr_operator
 
-# [MARK] try using QuantumToolbox.jl
-function gen_qkrlocalized_states(;
+function gen_qkr_operator(;
     n_qubits::Int64,
     K::Float64,
     ħₛ::Float64,
-)::BatchState
+)::AbstractQuantumObject{Operator}
     dims = 2^n_qubits
     m_vec = [0:(dims/2-1); (-dims/2):-1]
     U = zeros(ComplexF64, (dims, dims))
@@ -138,7 +137,7 @@ function gen_qkrlocalized_states(;
         U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
     end
 
-    return eigen(U).vectors
+    return Qobj(U)
 end
 
 
@@ -154,7 +153,7 @@ function gen_tfim_hamiltonian(;
     )
 
     partial_term_1 = vcat(
-        [sigmaz(), sigmaz()],
+        [QT.sigmaz(), QT.sigmaz()],
         fill(QT.eye(2), n_qubits-2),
     )
     partial_term_2 = vcat(
