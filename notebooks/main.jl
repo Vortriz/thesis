@@ -63,18 +63,21 @@ end;
 
 # ╔═╡ d5d5bd83-1e77-4d5f-a24c-a0e576fe1eff
 begin
-    const save_path = joinpath(
-        base_path,
-        "data",
-        Dates.format(Dates.now(), "yyyy-mm-dd_HH-MM-SS"),
-    )
+    const save_path =
+        joinpath(
+            base_path,
+            "data",
+            Dates.format(Dates.now(), "yyyy-mm-dd_HH-MM-SS"),
+        ) |> abspath
+
     if TB_LOGGING == true
         tbl = TBLogger(
             save_path;
             min_level=Logging.Info,
         )
-        log_hyperparams(tbl, ansatz, config)
-        log_optim(tbl, optimizer)
+        @info "Saving at $save_path"
+        GQML.log_hyperparams(tbl, ansatz, config)
+        GQML.log_optim(tbl, optimizer)
     end
 end
 
@@ -83,9 +86,10 @@ loss_history, params = train(
     ansatz,
     config;
     optimizer=optimizer,
-    callback=(loss, step) -> begin
+    callback=(loss) -> begin
         if TB_LOGGING == true
-            log_value(tbl, "loss", loss; step=step)
+            increment_step!(tbl, 1)
+            log_value(tbl, "loss", loss)
         end
     end,
 )
@@ -98,7 +102,7 @@ loss_history_fig = plot_loss_history(
 
 # ╔═╡ d95bf7db-e4d9-4964-9019-69ac019dd7fb
 if TB_LOGGING == true
-    save_run(
+    save(
         save_path,
         ansatz, config,
         params, loss_history_fig,

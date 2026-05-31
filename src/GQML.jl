@@ -20,8 +20,7 @@ using QuantumToolbox:
     QuantumToolbox as QT,
     AbstractQuantumObject, Operator
 
-using ProgressLogging: @progress
-using TensorBoardLogger: TBLogger, log_text
+using ProgressLogging: @progress   # [TODO] get rid of this
 using PlutoSerialization
 
 
@@ -47,6 +46,6 @@ include("utils.jl")
 include("distributions.jl")
 include("plotting.jl")
 include("model.jl")
-include("logging.jl")
+include("save.jl")
 
 end

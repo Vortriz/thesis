@@ -17,10 +17,12 @@ QuantumToolbox = "6c2fb7c5-b903-41d2-bc5e-5a7c320b9fab"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 Yao = "5872b779-8223-5990-8dd0-5abbb0748c8c"
 YaoPlots = "32cfe2d9-419e-45f2-8191-2267705d8dbc"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[weakdeps]
+TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 
 [compat]
 CUDA = "5"
@@ -31,6 +33,9 @@ PlutoSerialization = "0.1.2"
 Random = "1.11.0"
 Statistics = "1.11.1"
 TensorBoardLogger = "0.1.26"
+
+[extensions]
+GQMLTensorBoardLoggerExt = "TensorBoardLogger"
 
 [extras]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"

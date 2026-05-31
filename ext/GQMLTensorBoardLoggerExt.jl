@@ -1,10 +1,10 @@
-export log_hyperparams, log_optim, save_run
+module GQMLTensorBoardLoggerExt
 
-macro store(path, data)
-    return :(open(f -> serialize(f, $(esc(data))), $(esc(path)), "w"))
-end
+using GQML: GQML, AbstractAnsatz, TrainConfig
+import Optimisers
+using TensorBoardLogger: TBLogger, log_text
 
-function log_hyperparams(
+function GQML.log_hyperparams(
     tbl::TBLogger,
     ansatz::AbstractAnsatz,
     config::TrainConfig,
@@ -40,9 +40,11 @@ function log_hyperparams(
         config.trajectory |> typeof |> string;
         step=0,
     )
+
+    return
 end
 
-function log_optim(
+function GQML.log_optim(
     tbl::TBLogger,
     optimizer::Optimisers.AbstractRule,
 )
@@ -52,16 +54,8 @@ function log_optim(
         string(optimizer);
         step=0,
     )
+
+    return
 end
 
-function save_run(
-    save_path::String,
-    ansatz::AbstractAnsatz, config::TrainConfig,
-    params::Matrix{Float64}, loss_history_fig,
-)
-    @store joinpath(save_path, "model.jls") (ansatz=ansatz, config=config)
-    @store joinpath(save_path, "params.jls") params
-
-    save(joinpath(save_path, "loss_history.svg"), loss_history_fig)
-    return
 end

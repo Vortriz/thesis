@@ -27,7 +27,6 @@ function train(
 ) where {A <: AbstractAnsatz}
     params = zeros(Float64, (ansatz.n_params, config.T))
     loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
-    global_step = 1
 
     current_reg = deepcopy(config.trajectory.steps[begin].register)
 
@@ -85,8 +84,7 @@ function train(
             Optimisers.update!(opt_state, current_params, grads[1])
             loss_history[t][epoch] = loss
 
-            callback(loss, global_step)
-            global_step += 1
+            callback(loss)
         end
 
         current_reg = convert(
