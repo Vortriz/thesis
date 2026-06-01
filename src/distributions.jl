@@ -1,8 +1,31 @@
-export ClusteredDist
+export AbstractDist
+abstract type AbstractDist end
 
-struct ClusteredDist <: AbstractDist
-    register::Register
+macro dist_struct(name)
+    return quote
+        struct $name <: AbstractDist
+            n_qubits::Int64
+            n_samples::Int64
+            register::Register
+
+            function $name(register::Register)
+                n_qubits = size(register.state, 1) |> log2 |> Int
+                n_samples = register.nbatch
+                return new(n_qubits, n_samples, register)
+            end
+
+            $name(ensemble::BatchState) = $name(convert(Register, ensemble))
+        end
+    end |> esc
 end
+
+
+export ArbitraryDist
+@dist_struct ArbitraryDist
+
+
+export ClusteredDist
+@dist_struct ClusteredDist
 
 function ClusteredDist(;
     n_qubits::Int64,
@@ -18,10 +41,32 @@ function ClusteredDist(;
 end
 
 
-export QKRLocalizedDist
+export QKRLocalizedDist, gen_qkr_operator
+@dist_struct QKRLocalizedDist
 
-struct QKRLocalizedDist <: AbstractDist
-    register::Register
+function gen_qkr_operator(;
+    n_qubits::Int64,
+    K::Float64,
+    ħₛ::Float64,
+)::AbstractQuantumObject{Operator}
+    dims = 2^n_qubits
+    m_vec = [0:(dims/2-1); (-dims/2):-1]
+    U = zeros(ComplexF64, (dims, dims))
+
+    Threads.@threads for idx in CartesianIndices(U)
+        i, j = idx.I
+        m₁, m₂ = m_vec[i], m_vec[j]
+        d = m₂ - m₁
+        if d > dims / 2
+            d -= dims
+        end
+        if d < -dims / 2
+            d += dims
+        end
+        U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
+    end
+
+    return Qobj(U)
 end
 
 function QKRLocalizedDist(;
@@ -52,14 +97,14 @@ end
 
 
 export CircleDist
-
-struct CircleDist <: AbstractDist
-    register::Register
-end
+@dist_struct CircleDist
 
 function CircleDist(;
+    n_qubits::Int64,
     n_samples::Int64,
 )
+    @assert n_qubits == 1 "Circle distribution is defined only for 1 qubit."
+
     phis = rand(Float64, n_samples) * 2pi
     ensemble_gen = ([cos(phis[i]), sin(phis[i])] .|> ComplexF64 for i in 1:n_samples)
     ensemble = reduce(hcat, ensemble_gen)
@@ -68,10 +113,35 @@ function CircleDist(;
 end
 
 
-export TFIMDist
+export TFIMDist, gen_tfim_hamiltonian
+@dist_struct TFIMDist
 
-struct TFIMDist <: AbstractDist
-    register::Register
+function gen_tfim_hamiltonian(;
+    n_qubits::Int64,
+    g::Float64,
+)::AbstractQuantumObject{Operator}
+    H = QT.Qobj(
+        zeros(ComplexF64, (2^n_qubits, 2^n_qubits));
+        dims=Tuple(fill(2, n_qubits)),
+    )
+
+    partial_term_1 = vcat(
+        [QT.sigmaz(), QT.sigmaz()],
+        fill(QT.eye(2), n_qubits - 2),
+    )
+    partial_term_2 = vcat(
+        [QT.sigmax()],
+        fill(QT.eye(2), n_qubits - 1),
+    )
+
+    for i in 0:(n_qubits-2)
+        H -= reduce(QT.kron, circshift(partial_term_1, i))
+    end
+    for i in 0:(n_qubits-1)
+        H -= g * reduce(QT.kron, circshift(partial_term_2, i))
+    end
+
+    return H
 end
 
 function TFIMDist(;
@@ -90,10 +160,7 @@ end
 
 
 export HaarDist
-
-struct HaarDist <: AbstractDist
-    register::Register
-end
+@dist_struct HaarDist
 
 function HaarDist(;
     n_qubits::Int64,

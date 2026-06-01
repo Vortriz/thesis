@@ -1,5 +1,4 @@
-export mmd_distance, wasserstein_distance, optimal_transport_plan, sinkhorn_distance
-
+export mmd_distance
 
 # Maximum Mean Discrepancy (MMD)
 function mmd_distance(
@@ -17,6 +16,8 @@ function mmd_distance(
     return 2.0 * r12 - r11 - r22
 end
 
+
+export optimal_transport_plan
 
 # Based on https://github.com/xieyujia/IPOT/blob/master/ipot.py
 function optimal_transport_plan(
@@ -55,6 +56,8 @@ function optimal_transport_plan(
     return P
 end
 
+
+export wasserstein_distance
 
 # Wasserstein (IPOT)
 function wasserstein_distance(
