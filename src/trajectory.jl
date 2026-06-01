@@ -3,25 +3,17 @@ abstract type AbstractTrajectory end
 
 struct Direct <: AbstractTrajectory
     steps::Vector{AbstractDist}
-    initial_dist_type::Type{<:AbstractDist}
-    target_dist_type::Type{<:AbstractDist}
 
     function Direct(;
         initial_dist::AbstractDist,
         target_dist::AbstractDist,
     )
-        return new(
-            AbstractDist[initial_dist, target_dist],
-            typeof(initial_dist),
-            typeof(target_dist),
-        )
+        return new(AbstractDist[initial_dist, target_dist])
     end
 end
 
 struct Diffusion <: AbstractTrajectory
     steps::Vector{AbstractDist}
-    initial_dist_type::Type{HaarDist}
-    target_dist_type::Type{<:AbstractDist}
 
     function Diffusion(;
         target_dist::AbstractDist,
@@ -61,10 +53,6 @@ struct Diffusion <: AbstractTrajectory
         steps[end] = HaarDist(steps[end].register)
         reverse!(steps)
 
-        return new(
-            steps,
-            HaarDist,
-            typeof(steps[end]),
-        )
+        return new(steps)
     end
 end
