@@ -7,5 +7,4 @@
 #SBATCH --error=logs/job.%J.err
 #SBATCH --output=logs/job.%J.out
 
-julia --project -e 'using Pkg; Pkg.precompile()'
-julia --project notebooks/main.jl
+julia -t $SLURM_JOB_CPUS_PER_NODE notebooks/main.jl

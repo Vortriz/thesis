@@ -11,10 +11,11 @@ begin
     # activate the shared project environment
     Pkg.activate(@__DIR__)
 
-    # This file must always be executed from notebooks/ dir
+    # This file needs to be executed from notebooks/ dir
+    cd(@__DIR__)
     base_path = ".."
     Pkg.develop(Pkg.PackageSpec(; path=base_path))
-    Pkg.instantiate()
+    Pkg.precompile()
 
     using GQML
     using CairoMakie
