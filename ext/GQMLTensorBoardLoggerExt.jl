@@ -40,6 +40,18 @@ function GQML.log_hyperparams(
         config.trajectory |> typeof |> string;
         step=0,
     )
+    log_text(
+        tbl,
+        "initial_dist",
+        config.trajectory.steps[begin] |> typeof |> string;
+        step=0,
+    )
+    log_text(
+        tbl,
+        "target_dist",
+        config.trajectory.steps[end] |> typeof |> string;
+        step=0,
+    )
 
     return
 end

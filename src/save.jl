@@ -16,6 +16,15 @@ function save(
     return
 end
 
+function save(
+    save_path::String,
+    plots::Dict{String, CairoMakie.Figure},
+)
+    for (fname, fig) in plots
+        CairoMakie.save(joinpath(save_path, "$fname.svg"), fig)
+    end
+end
+
 # Empty stubs for TensorBoardLogger extension
 function log_hyperparams end
 function log_optim end
