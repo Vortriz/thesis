@@ -1,5 +1,9 @@
-export AbstractTrajectory, Diffusion, Direct
+export AbstractTrajectory, ArbitraryTrajectory, Diffusion, Direct
 abstract type AbstractTrajectory end
+
+struct ArbitraryTrajectory <: AbstractTrajectory
+    steps::Vector{AbstractDist}
+end
 
 struct Direct <: AbstractTrajectory
     steps::Vector{AbstractDist}

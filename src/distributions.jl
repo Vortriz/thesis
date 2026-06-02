@@ -166,6 +166,8 @@ function HaarDist(;
     n_qubits::Int64,
     n_samples::Int64,
 )
+    @assert n_qubits >= 2 "TFIM distribution is defined only for more than 2 qubits."
+
     ensemble = randn(RNG, ComplexF64, (2^n_qubits, n_samples))
 
     return HaarDist(ensemble)

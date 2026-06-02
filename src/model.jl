@@ -121,5 +121,5 @@ function inference(
         trajectory[t+1] = ArbitraryDist(current_reg)
     end
 
-    return trajectory
+    return ArbitraryTrajectory(trajectory)
 end
