@@ -27,3 +27,13 @@ function magnetization(ψ::State)
 
     return M
 end
+
+function magnetization(register::Register)
+    register = register |> cpu
+    magnetization_vals = zeros(Float64, register.nbatch)
+    for (i, ψ) in register.state |> eachcol |> enumerate
+        magnetization_vals[i] = magnetization(ψ)
+    end
+
+    return magnetization_vals
+end

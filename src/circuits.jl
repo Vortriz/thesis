@@ -8,9 +8,9 @@ function scramble_circuit(n_qubits::Int64)::ChainBlock{2}
     circuit = chain(n_qubits)
 
     for i in register
-        push!(circuit, put(i => Rx(0)))
+        push!(circuit, put(i => Rz(0)))
         push!(circuit, put(i => Ry(0)))
-        push!(circuit, put(i => Rx(0)))
+        push!(circuit, put(i => Rz(0)))
     end
 
     RZZ_combinations = combinations(register, 2)

@@ -41,6 +41,23 @@ function ClusteredDist(;
 end
 
 
+export CircleDist
+@dist_struct CircleDist
+
+function CircleDist(;
+    n_qubits::Int64,
+    n_samples::Int64,
+)
+    @assert n_qubits == 1 "Circle distribution is defined only for 1 qubit."
+
+    phis = rand(Float64, n_samples) * 2pi
+    ensemble_gen = ([cos(phis[i]), sin(phis[i])] .|> ComplexF64 for i in 1:n_samples)
+    ensemble = reduce(hcat, ensemble_gen)
+
+    return CircleDist(ensemble)
+end
+
+
 export QKRLocalizedDist, gen_qkr_operator
 @dist_struct QKRLocalizedDist
 
@@ -66,7 +83,7 @@ function gen_qkr_operator(;
         U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
     end
 
-    return Qobj(U)
+    return QT.Qobj(U)
 end
 
 function QKRLocalizedDist(;
@@ -87,29 +104,12 @@ function QKRLocalizedDist(;
             n_qubits=n_qubits,
             K=K[i],
             ħₛ=ħₛ[i],
-        ) |> eigenstates |> evd -> evd.vectors
+        ) |> QT.eigenstates |> evd -> evd.vectors
         for i in eachindex(K)
     )
     ensemble = reduce(hcat, ensemble_gen)
 
     return QKRLocalizedDist(ensemble)
-end
-
-
-export CircleDist
-@dist_struct CircleDist
-
-function CircleDist(;
-    n_qubits::Int64,
-    n_samples::Int64,
-)
-    @assert n_qubits == 1 "Circle distribution is defined only for 1 qubit."
-
-    phis = rand(Float64, n_samples) * 2pi
-    ensemble_gen = ([cos(phis[i]), sin(phis[i])] .|> ComplexF64 for i in 1:n_samples)
-    ensemble = reduce(hcat, ensemble_gen)
-
-    return CircleDist(ensemble)
 end
 
 
@@ -148,6 +148,8 @@ function TFIMDist(;
     n_qubits::Int64,
     g::Vector{Float64},
 )
+    @assert n_qubits >= 2 "TFIM distribution is defined only for more than 2 qubits."
+
     ensemble = zeros(ComplexF64, (2^n_qubits, length(g)))
 
     for (i, gᵢ) in enumerate(g)
@@ -166,8 +168,6 @@ function HaarDist(;
     n_qubits::Int64,
     n_samples::Int64,
 )
-    @assert n_qubits >= 2 "TFIM distribution is defined only for more than 2 qubits."
-
     ensemble = randn(RNG, ComplexF64, (2^n_qubits, n_samples))
 
     return HaarDist(ensemble)
