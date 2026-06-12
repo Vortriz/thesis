@@ -1,8 +1,8 @@
 ## Ongoing work
 
 Simulations in Julia
-- Main notebook at [main.jl](notebooks/main.jl)
-<!--- Saved runs at [saves](simulations/3-qml-jl/saves)-->
+- The notebook to run is [main.jl](notebooks/main.jl)
+- The main Generative Quantum Machine Learning (GQML) module is present at [`src`](src/). Additionally, [`CUDA.jl`](ext/GQMLCUDAExt.jl) and [`TensorBoardLogger.jl`](ext/GQMLTensorBoardLoggerExt.jl) extensions are available.
 
 ## Reports and presentations
 

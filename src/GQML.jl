@@ -18,7 +18,7 @@ using QuantumToolbox:
     QuantumToolbox as QT,
     AbstractQuantumObject, Operator
 
-using ProgressLogging: @progress   # [TODO] get rid of this
+using ProgressLogging: @progress
 using PlutoSerialization
 
 
