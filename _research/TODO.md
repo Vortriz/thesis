@@ -3,5 +3,3 @@
 - port `archive/training_strategies`
 - recreate important results from `archive/saves`
 - unit tests
-- TensorBoardLogger ext
-- CUDA ext
