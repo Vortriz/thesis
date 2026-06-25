@@ -2,13 +2,13 @@
 #import "@preview/physica:0.9.8": *
 
 #show: kunskap.with(
-  title: [Report: February],
-  author: "Rishi Vora",
-  date: datetime.today().display(),
-  header: "PRJ501",
+    title: [Report: February],
+    author: "Rishi Vora",
+    date: datetime.today().display(),
+    header: "PRJ501",
 
-  headings-font: "Times New Roman",
-  body-font-size: 11pt,
+    headings-font: "Times New Roman",
+    body-font-size: 11pt,
 )
 
 #set heading(numbering: "1.")
@@ -51,21 +51,21 @@ There is also the fact that these distances are defined for density matrices, wh
 The original paper @Zhang2024quddpm used the Adam optimizer. I intended to find a good gradient-free optimizer, so I experimented with the following:
 
 - *Rotosolve* @Ostaszewski2021rotosolve
-  - A gradient-free optimizer that optimizes one parameter at a time by solving a small optimization problem.
-  - Worked well for smaller systems (up to 3 qubits) but failed to converge for larger systems.
-  - Failed because it is designed for optimizing objective functions that are encoded as expectation values of some operator.
+    - A gradient-free optimizer that optimizes one parameter at a time by solving a small optimization problem.
+    - Worked well for smaller systems (up to 3 qubits) but failed to converge for larger systems.
+    - Failed because it is designed for optimizing objective functions that are encoded as expectation values of some operator.
 
 - *Simultaneous Perturbation Stochastic Approximation (SPSA)* @Spall1992spsa
-  - A gradient-free optimizer that estimates the gradient by perturbing all parameters simultaneously.
-  - Failed to converge for my problem, for unknown reasons.
+    - A gradient-free optimizer that estimates the gradient by perturbing all parameters simultaneously.
+    - Failed to converge for my problem, for unknown reasons.
 
 - *Quantum Natural SPSA (QNSPSA)* @Gacon2021qnspsa
-  - A second-order variant of SPSA that takes into account the geometry of the quantum state space by approximating the quantum Fisher information matrix.
-  - Showed some promise for smaller systems but did not converge reasonably fast for larger systems.
+    - A second-order variant of SPSA that takes into account the geometry of the quantum state space by approximating the quantum Fisher information matrix.
+    - Showed some promise for smaller systems but did not converge reasonably fast for larger systems.
 
 - *Adam*
-  - A previous attempt at using Adam in Julia was not successful due to issues with the automatic differentiation library (Zygote), but I was able to get it to work on another attempt. Compared to Python, it offers a significant speedup (10-15x).
-  - I also tried targeting the initial state directly instead of intermediate states, which worked just as well up to 4 qubits. More testing is needed for larger systems.
+    - A previous attempt at using Adam in Julia was not successful due to issues with the automatic differentiation library (Zygote), but I was able to get it to work on another attempt. Compared to Python, it offers a significant speedup (10-15x).
+    - I also tried targeting the initial state directly instead of intermediate states, which worked just as well up to 4 qubits. More testing is needed for larger systems.
 
 = Planned Work
 

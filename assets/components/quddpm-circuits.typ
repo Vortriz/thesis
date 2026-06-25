@@ -222,7 +222,7 @@
             mqgate($Y Y$, n: 2),
             mqgate($Z Z$, n: 2),
             1,
-        )
+        ),
     )
 }
 
@@ -240,9 +240,14 @@
         ),
         [=],
         quantum-circuit(
-            ctrl(1), gate($R_X (phi)$), ctrl(1), [\ ],
-            targ(), 1, targ(),
-        )
+            ctrl(1),
+            gate($R_X (phi)$),
+            ctrl(1),
+            [\ ],
+            targ(),
+            1,
+            targ(),
+        ),
     )
 
     let ZZ = grid(
@@ -255,9 +260,14 @@
         ),
         [=],
         quantum-circuit(
-            ctrl(1), 1, ctrl(1), [\ ],
-            targ(), gate($R_Z (phi)$), targ(),
-        )
+            ctrl(1),
+            1,
+            ctrl(1),
+            [\ ],
+            targ(),
+            gate($R_Z (phi)$),
+            targ(),
+        ),
     )
 
     let YY = grid(
@@ -270,9 +280,22 @@
         ),
         [=],
         quantum-circuit(
-            1, gate($R_X (pi/2)$), ctrl(1), 1, ctrl(1), gate($R_X (-pi/2)$), 1, [\ ],
-            1, gate($R_X (pi/2)$), targ(), gate($R_Z (phi)$), targ(), gate($R_X (-pi/2)$), 1,
-        )
+            1,
+            gate($R_X (pi/2)$),
+            ctrl(1),
+            1,
+            ctrl(1),
+            gate($R_X (-pi/2)$),
+            1,
+            [\ ],
+            1,
+            gate($R_X (pi/2)$),
+            targ(),
+            gate($R_Z (phi)$),
+            targ(),
+            gate($R_X (-pi/2)$),
+            1,
+        ),
     )
 
     grid(

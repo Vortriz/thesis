@@ -2,13 +2,13 @@
 #import "@preview/physica:0.9.8": *
 
 #show: kunskap.with(
-  title: [Report: March],
-  author: "Rishi Vora",
-  date: datetime.today().display(),
-  header: "PRJ501",
+    title: [Report: March],
+    author: "Rishi Vora",
+    date: datetime.today().display(),
+    header: "PRJ501",
 
-  headings-font: "Times New Roman",
-  body-font-size: 11pt,
+    headings-font: "Times New Roman",
+    body-font-size: 11pt,
 )
 
 #set heading(numbering: "1.")
@@ -50,11 +50,11 @@ Taking these two optimizers forward, I benchmarked them on a 6-qubit system. AMS
 I compared the performance of my implementation with Quantum Direct Transport (QuDT) model as per described in @Zhang2024quddpm. The basic idea to train all the parameters to minimize the distance to the target ensemble. Out of curiosity, I also tweaked the QuDT to include intermediate measurements on ancilla, with the intuition that it would help dump the entropy of the system to make the convergence better.
 
 #align(
-  center,
-  image(
-    "/presentations/2026-03-21/presentation.pdf",
-    height: 80%,
-  ),
+    center,
+    image(
+        "/presentations/2026-03-21/presentation.pdf",
+        height: 80%,
+    ),
 )
 
 It certainly performed better than the vanilla QuDT, but it was still not good enough. Curiously, the gradient-less QNSPSA optimizer performed better than the gradient-based AMSGrad optimizer. But it still no match to AMSGrad with step-wise training. With 6-qubits, the gap widens even more; AMSGrad converged far quicker and better than the QuDT-based approaches.

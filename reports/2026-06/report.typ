@@ -1,15 +1,17 @@
 #import "@preview/kunskap:0.1.0": *
 #import "@preview/physica:0.9.8": *
-#import "../../assets/components/quddpm-circuits.typ": hea-block, eha-block, U_ent, U_ent-decomposed
+#import "../../assets/components/quddpm-circuits.typ": (
+    U_ent, U_ent-decomposed, eha-block, hea-block,
+)
 
 #show: kunskap.with(
-  title: [Report: June],
-  author: "Rishi Vora",
-  date: datetime.today().display(),
-  header: "PRJ502",
+    title: [Report: June],
+    author: "Rishi Vora",
+    date: datetime.today().display(),
+    header: "PRJ502",
 
-  headings-font: "Times New Roman",
-  body-font-size: 11pt,
+    headings-font: "Times New Roman",
+    body-font-size: 11pt,
 )
 
 #set heading(numbering: "1.")
@@ -62,7 +64,7 @@ Since the model has been tested on toy distributions and has demonstrated faster
 
 #figure(
     image("/assets/images/qkr-localization.png"),
-    caption: [Localization of QKR states of 10 qubits (i.e. 1024 basis states) \ with $K = 12, hbar_s = 0.7$ after 1000 kicks. The y-axis is on a log scale.]
+    caption: [Localization of QKR states of 10 qubits (i.e. 1024 basis states) \ with $K = 12, hbar_s = 0.7$ after 1000 kicks. The y-axis is on a log scale.],
 )
 
 To observe this phenomenon reliably, minimum 8 qubits (i.e. 256 basis states) are required. Unfortunately, the model was unable to converge to the target distribution for 8 qubits. The loss plateaued at a value of 0.8 despite trying various optimizers, learning rates, and ansatzes. I am not sure what could be the reason for this, but I am looking into it.
@@ -86,8 +88,10 @@ Given below are the results of training S-QuDT and QuDDPM on 4, 5, and 6 qubit T
     set grid.vline(stroke: (paint: gray, dash: "dashed"))
 
     grid(
-        grid.cell(colspan: 2, inset: (bottom: 1em))[*4-qubit TFIM ground states*],
-        grid.vline(x: 1, start: 1, end: 3,),
+        grid.cell(colspan: 2, inset: (
+            bottom: 1em,
+        ))[*4-qubit TFIM ground states*],
+        grid.vline(x: 1, start: 1, end: 3),
         image("/assets/images/tfim/4q-diffusion/loss_history_fig.svg"),
         image("/assets/images/tfim/4q-direct/loss_history_fig.svg"),
         image("/assets/images/tfim/4q-diffusion/generated_trajectory.svg"),
@@ -100,8 +104,10 @@ Given below are the results of training S-QuDT and QuDDPM on 4, 5, and 6 qubit T
     set align(horizon)
 
     grid(
-        grid.cell(colspan: 2, inset: (bottom: 1em))[*5-qubit TFIM ground states*],
-        grid.vline(x: 1, start: 1, end: 3,),
+        grid.cell(colspan: 2, inset: (
+            bottom: 1em,
+        ))[*5-qubit TFIM ground states*],
+        grid.vline(x: 1, start: 1, end: 3),
         image("/assets/images/tfim/5q-diffusion/loss_history_fig.svg"),
         image("/assets/images/tfim/5q-direct/loss_history_fig.svg"),
         image("/assets/images/tfim/5q-diffusion/generated_trajectory.svg"),
@@ -113,8 +119,10 @@ Given below are the results of training S-QuDT and QuDDPM on 4, 5, and 6 qubit T
     v(2em)
 
     grid(
-        grid.cell(colspan: 2, inset: (bottom: 1em))[*6-qubit TFIM ground states*],
-        grid.vline(x: 1, start: 1, end: 3,),
+        grid.cell(colspan: 2, inset: (
+            bottom: 1em,
+        ))[*6-qubit TFIM ground states*],
+        grid.vline(x: 1, start: 1, end: 3),
         image("/assets/images/tfim/6q-diffusion/loss_history_fig.svg"),
         image("/assets/images/tfim/6q-direct/loss_history_fig.svg"),
         image("/assets/images/tfim/6q-diffusion/generated_trajectory.svg"),

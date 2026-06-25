@@ -2,13 +2,13 @@
 #import "@preview/physica:0.9.8": *
 
 #show: kunskap.with(
-  title: [Report: January],
-  author: "Rishi Vora",
-  date: datetime.today().display(),
-  header: "PRJ501",
+    title: [Report: January],
+    author: "Rishi Vora",
+    date: datetime.today().display(),
+    header: "PRJ501",
 
-  headings-font: "Times New Roman",
-  body-font-size: 11pt,
+    headings-font: "Times New Roman",
+    body-font-size: 11pt,
 )
 
 #set heading(numbering: "1.")
@@ -32,39 +32,41 @@ In July, I worked on learning about Classical DDPM models and implemented a basi
 We focused on the implementation by Zhang et al. @Zhang2024quddpm. Here, we take an ensemble of states of our interest, gradually add noise to them via a Quantum Scrambling Circuit (QSC), then train multiple Parameterized Quantum Circuits (PQC) to denoise the ensemble step-by-step.
 
 #figure(
-  image("/assets/images/zhang2024/overview.png", height: 250pt),
-  caption: [Overview of Quantum DDPM \ Credits: @Zhang2024quddpm],
+    image("/assets/images/zhang2024/overview.png", height: 250pt),
+    caption: [Overview of Quantum DDPM \ Credits: @Zhang2024quddpm],
 )
 
 Let there be ensembles of states $cal(E)_1$ and $cal(E)_2$ of size $n_1$ and $n_2$ respectively. Two loss functions are used here:
 
 - *Maximum Mean Discrepancy (MMD)*
-  $
-    cal(D)_"MMD" (cal(E)_1, cal(E)_2) = dash(F) (cal(E)_1, cal(E)_1) + dash(F) (cal(E)_2, cal(E)_2) - 2 dash(F) (cal(E)_1, cal(E)_2)
-  $
+    $
+        cal(D)_"MMD" (cal(E)_1, cal(E)_2) = dash(F) (cal(E)_1, cal(E)_1) + dash(F) (cal(E)_2, cal(E)_2) - 2 dash(F) (cal(E)_1, cal(E)_2)
+    $
 
-  where
+    where
 
-  $ dash(F) (cal(E)_1, cal(E)_2) = bb(E)_(ket(phi) tilde cal(E)_1, ket(psi) tilde cal(E)_2) |braket(phi, psi)|^2 $
+    $
+        dash(F) (cal(E)_1, cal(E)_2) = bb(E)_(ket(phi) tilde cal(E)_1, ket(psi) tilde cal(E)_2) |braket(phi, psi)|^2
+    $
 
-  - Worked well for simple distribution of states (e.g. states clustered around the ground state)
-  - Computationally efficient
+    - Worked well for simple distribution of states (e.g. states clustered around the ground state)
+    - Computationally efficient
 
 - *Wasserstein Distance*
-  $
-    W_2 (cal(E)_1, cal(E)_2) = min_P & chevron.l P, C chevron.r, \
-                           s.t. quad & P bold(1)_n_1 = 1, \
-                                     & P bold(1)_n_2 = 1, \
-                                     & P_(i j) >= 0
-  $
+    $
+        W_2 (cal(E)_1, cal(E)_2) = min_P & chevron.l P, C chevron.r, \
+                               s.t. quad & P bold(1)_n_1 = 1, \
+                                         & P bold(1)_n_2 = 1, \
+                                         & P_(i j) >= 0
+    $
 
-  where
+    where
 
-  $ C_(i j) = 1 - |braket(phi_i, psi_j)|^2 $
+    $ C_(i j) = 1 - |braket(phi_i, psi_j)|^2 $
 
-  and $P$ is a transport plan.
-  - Worked better for complex distributions
-  - Computationally expensive
+    and $P$ is a transport plan.
+    - Worked better for complex distributions
+    - Computationally expensive
 
 = My Work
 
@@ -85,12 +87,12 @@ For distribution of arbitrary states, the Consistency model did not work well.
 Apart from the two loss functions mentioned, I experimented with a few other variants:
 
 - *Sinkhorn Distance*
-  - Approximates Wasserstein distance with entropic regularization
-  - More computationally efficient than Wasserstein distance
+    - Approximates Wasserstein distance with entropic regularization
+    - More computationally efficient than Wasserstein distance
 
 - *Inexact Proximal point method for exact Optimal Transport problem (IPOT)*
-  - Another approximation for Wasserstein distance but has theoretical guarantees of convergence to the Wasserstein distance @Xie2018ipot
-  - Computationally efficient
+    - Another approximation for Wasserstein distance but has theoretical guarantees of convergence to the Wasserstein distance @Xie2018ipot
+    - Computationally efficient
 
 === Optimizers
 
