@@ -48,13 +48,17 @@ end
 
 export plot_bloch
 
-function _bloch_helper!(dist::AbstractDist, pos::GridPosition)
-    register = dist.register |> cpu
-
+function _bloch_helper!(
+    pos::GridPosition,
+    reg::Union{
+        BatchedArrayReg{2, ComplexF64, Transpose{ComplexF64, Matrix{ComplexF64}}},
+        BatchedArrayReg{2, ComplexF64, Matrix{ComplexF64}},
+    },
+)
     b = QT.Bloch()
-    points = zeros(Float64, (3, dist.n_samples))
+    points = zeros(Float64, (3, length(reg)))
 
-    for (i, s) in register.state |> eachcol |> enumerate
+    for (i, s) in reg.state |> eachcol |> enumerate
         ψ = s[1] * QT.basis(2, 0) + s[2] * QT.basis(2, 1)
         points[:, i] =
             [
@@ -77,7 +81,7 @@ function plot_bloch(
     @assert dist.n_qubits == 1 "Plotting on Bloch sphere is only available for 1 qubit system."
 
     fig = Figure()
-    _bloch_helper!(dist, fig[1, 1])
+    _bloch_helper!(fig[1, 1], dist.register)
 
     # To make the plot square and remove axes
     if square == true
@@ -108,7 +112,7 @@ function plot_bloch(;
 
     for (t, dist) in enumerate(steps)
         row, col = coords(t)
-        _bloch_helper!(dist, fig[row, col])
+        _bloch_helper!(fig[row, col], dist.register)
         Label(
             fig[row, col, Top()];
             text=L"\textbf{Step $%$(t-1)$}",
@@ -119,7 +123,7 @@ function plot_bloch(;
 
     if is_ref
         row, col = coords(n_steps)
-        _bloch_helper!(ref_dist, fig[row, col])
+        _bloch_helper!(fig[row, col], ref_dist.register)
         Label(
             fig[row, col, Top()];
             text=L"\textbf{ %$ref_label }",
@@ -221,22 +225,30 @@ function plot(
     return fig
 end
 
-function _qkr_helper!(pos::GridPosition, dist::AbstractDist, title)
+function _qkr_helper!(
+    pos::GridPosition,
+    reg::Union{
+        BatchedArrayReg{2, ComplexF64, Transpose{ComplexF64, Matrix{ComplexF64}}},
+        BatchedArrayReg{2, ComplexF64, Matrix{ComplexF64}},
+    },
+    title::String,
+)
     ax = Axis(
         pos;
         title=title,
         xlabel=L"m",
         ylabel=L"\left| \psi(p) \right|^2",
         yscale=log10,
+        yticks=LogTicks(LinearTicks(5)),
+        yminorticksvisible=true,
+        yminorticks=IntervalsBetween(10),
     )
 
-    register = dist.register |> cpu
-
-    dims, n = size(register.state)
+    dims, n = size(reg.state)
     m_vec = [0:(dims/2-1); (-dims/2):-1]
     avg_amplitudes = zeros(Float64, dims)
 
-    for ψ in register.state |> eachcol
+    for ψ in reg.state |> eachcol
         amplitudes = get_centered_amplitudes(ψ)
         avg_amplitudes += amplitudes
     end
@@ -255,7 +267,7 @@ function plot(
     title::String,
 )
     fig = Figure()
-    _qkr_helper!(fig[1, 1], dist, title)
+    _qkr_helper!(fig[1, 1], dist.register, title)
 
     return fig
 end
@@ -278,12 +290,12 @@ function plot(
 
     for (t, dist) in enumerate(steps)
         row, col = coords(t)
-        _qkr_helper!(fig[row, col], dist, L"\textbf{Step $%$(t-1)$}")
+        _qkr_helper!(fig[row, col], dist.register, L"\textbf{Step $%$(t-1)$}")
     end
 
     if is_ref
         row, col = coords(n_steps)
-        _qkr_helper!(fig[row, col], ref_dist, L"\textbf{ %$ref_label }")
+        _qkr_helper!(fig[row, col], ref_dist.register, L"\textbf{ %$ref_label }")
     end
 
     Label(fig[0, :], title; fontsize=20, font=:bold, padding=(0, 0, 10, 0))

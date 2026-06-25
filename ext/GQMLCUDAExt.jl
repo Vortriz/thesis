@@ -1,8 +1,9 @@
 module GQMLCUDAExt
 
 using CUDA
-using Yao: BatchedArrayReg, normalize!
+using Yao: BatchedArrayReg, normalize!, cpu
 using LinearAlgebra: mul!
+using CairoMakie: GridPosition
 using GQML: GQML, Register, AbstractDist, BatchState
 
 CUDA.allowscalar(false)
@@ -47,5 +48,20 @@ function GQML.optimal_transport_plan(
 end
 
 # [TODO] port all dist generation natively to CUDA (maybe?)
+
+function _qkr_helper!(
+    pos::GridPosition,
+    reg::BatchedArrayReg{2, ComplexF64, CuMatrix{ComplexF64}},
+    title::String,
+)
+    _qkr_helper!(pos, reg |> cpu, title)
+end
+
+function _bloch_helper!(
+    pos::GridPosition,
+    reg::BatchedArrayReg{2, ComplexF64, CuMatrix{ComplexF64}},
+)
+    _bloch_helper!(pos, reg |> cpu)
+end
 
 end

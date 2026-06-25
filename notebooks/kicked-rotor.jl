@@ -5,6 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 3814d626-327f-11f1-ade5-130603661e5c
+# ╠═╡ show_logs = false
 begin
     import Pkg
 
@@ -120,6 +121,32 @@ function plot_qkr_energy_evolution(E)
     return fig
 end
 
+# ╔═╡ 68d89de7-befd-4bea-bfae-9339cbfe5be4
+function plot_qkr_localization(ψ::Vector{ComplexF64})
+    fig = Figure()
+    ax = Axis(
+        fig[1, 1];
+        xlabel=L"m",
+        ylabel=L"\left| \psi(p) \right|^2",
+        yscale=log10,
+        yticks=LogTicks(LinearTicks(5)),
+        yminorticksvisible=true,
+        yminorticks=IntervalsBetween(10),
+    )
+
+    dims = length(ψ)
+    m_vec = [0:(dims/2-1); (-dims/2):-1]
+
+    scatter!(
+        ax,
+        m_vec, get_centered_amplitudes(ψ);
+        markersize=5,
+        label=:none,
+    )
+
+    return fig
+end
+
 # ╔═╡ 4e092315-784a-41d9-ba0e-f30d4f67b5b3
 begin
     ψ = zeros(ComplexF64, dims)
@@ -131,8 +158,8 @@ end
 # ╔═╡ 824f798b-437f-4110-8a94-3a5cd9c41574
 plot_qkr_energy_evolution(E)
 
-# ╔═╡ 4185c241-78ee-4d8f-bc0d-b1b1bda50458
-ψ |> get_centered_amplitudes |> plot_qkr_localization
+# ╔═╡ 240a503f-34ea-4396-a641-95555f40241a
+plot_qkr_localization(ψ)
 
 # ╔═╡ fea40b3b-dbc3-4059-b41c-b34d520efece
 md"""
@@ -146,13 +173,16 @@ eigenstates = QKRLocalizedDist(;
     n_qubits=10,
     K=12.0,
     ħₛ=0.7,
-).register
+)
 
 # ╔═╡ 9e0f1db0-d94f-4212-a2f7-a9be795c8fe1
-plot_qkr_localization(eigenstates)
+GQML.plot(
+    eigenstates;
+    title="Exponential localization",
+)
 
 # ╔═╡ Cell order:
-# ╟─3814d626-327f-11f1-ade5-130603661e5c
+# ╠═3814d626-327f-11f1-ade5-130603661e5c
 # ╟─35e4f6ac-f3b7-497d-a997-4821d024eae8
 # ╠═311e3ddf-25a0-4c28-ac5d-1f753c2cf7e4
 # ╠═30c6cfbf-23fd-4faf-95e6-4786316603f2
@@ -163,9 +193,10 @@ plot_qkr_localization(eigenstates)
 # ╟─ea8b11de-9faa-4ccd-9b97-3ec8bab50ee7
 # ╠═4ada6f4b-70c0-472c-8d75-c4b5ea89feb1
 # ╠═a6abbf87-1b38-4d50-872e-eb8838999e92
+# ╠═68d89de7-befd-4bea-bfae-9339cbfe5be4
 # ╠═4e092315-784a-41d9-ba0e-f30d4f67b5b3
 # ╠═824f798b-437f-4110-8a94-3a5cd9c41574
-# ╠═4185c241-78ee-4d8f-bc0d-b1b1bda50458
+# ╠═240a503f-34ea-4396-a641-95555f40241a
 # ╟─fea40b3b-dbc3-4059-b41c-b34d520efece
 # ╠═10adf359-d158-4911-88ff-e14af3c6b607
 # ╠═9e0f1db0-d94f-4212-a2f7-a9be795c8fe1
