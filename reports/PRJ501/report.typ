@@ -5,7 +5,7 @@
 #import "@preview/theoretic:0.3.1"
 #import "@preview/gentle-clues:1.3.1": *
 
-#import "/assets/components/quddpm-circuits.typ": forward-circuit, pqc-block, qsc-block, qudt-circuit, reverse-circuit
+#import "/assets/components/quddpm-circuits.typ": forward-circuit, hea-block, qsc-block, qudt-circuit, reverse-circuit
 
 #show: note.with(
   title: [Generative Quantum Machine Learning],
@@ -242,7 +242,7 @@ The reverse process consists of $T$ steps, where at each step $t$ a PQC is train
   ),
   <rc>,
   figure(
-    pqc-block,
+    hea-block,
     caption: [PQC block used in the reverse circuit.],
   ),
   <pqc>,
