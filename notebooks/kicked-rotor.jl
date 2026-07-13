@@ -37,8 +37,8 @@ end
 # ╔═╡ 30c6cfbf-23fd-4faf-95e6-4786316603f2
 function ckr_step!(x, p)
     for i in 1:(N_ckr-1)
-        p[i+1] = mod((p[i] + K_ckr * sin(x[i])), 2pi)
-        x[i+1] = mod((x[i] + p[i+1]), 2pi)
+        p[i+1] = mod((p[i] + K_ckr * sin(x[i])), 2π)
+        x[i+1] = mod((x[i] + p[i+1]), 2π)
     end
 end
 
@@ -46,17 +46,17 @@ end
 function plot_ckr_phase_space()
     fig = Figure()
     ax = Axis(fig[1, 1]; aspect=1, xlabel="x", ylabel="p")
-    xlims!(ax, 0, 2pi)
-    ylims!(ax, 0, 2pi)
+    xlims!(ax, 0, 2π)
+    ylims!(ax, 0, 2π)
 
-    for i in range(0, 2pi, 20)
+    for i in range(0, 2π, 20)
         x, p = zeros(N_ckr), zeros(N_ckr)
         x[begin] = i
         ckr_step!(x, p)
         scatter!(ax, x, p; markersize=2, color=:black)
     end
 
-    for i in range(0, 2pi, 100)
+    for i in range(0, 2π, 100)
         x, p = zeros(N_ckr), zeros(N_ckr)
         p[begin] = i
         ckr_step!(x, p)

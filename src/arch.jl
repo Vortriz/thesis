@@ -6,30 +6,10 @@ struct HEA{M <: AbstractMeasurement} <: AbstractAnsatz
     n_ancilla::Int64
     n_qubits::Int64
     n_layers::Int64
+    n_subblocks::Int64
     n_params::Int64
     circuit::ChainBlock{2}
     measurement::M
-
-    function HEA(;
-        n_data::Int64,
-        n_ancilla::Int64,
-        n_layers::Int64,
-        measurement::M,
-    ) where {M <: AbstractMeasurement}
-        n_qubits = n_data + n_ancilla
-        circuit = HEA_circuit(n_qubits, n_layers)
-        n_params = circuit |> parameters |> length
-
-        return new{M}(
-            n_data,
-            n_ancilla,
-            n_qubits,
-            n_layers,
-            n_params,
-            circuit,
-            measurement,
-        )
-    end
 end
 
 struct EHA{M <: AbstractMeasurement} <: AbstractAnsatz
@@ -37,31 +17,54 @@ struct EHA{M <: AbstractMeasurement} <: AbstractAnsatz
     n_ancilla::Int64
     n_qubits::Int64
     n_layers::Int64
+    n_subblocks::Int64
     n_params::Int64
     circuit::ChainBlock{2}
     measurement::M
-
-    function EHA(;
-        n_data::Int64,
-        n_ancilla::Int64,
-        n_layers::Int64,
-        measurement::M,
-    ) where {M <: AbstractMeasurement}
-        n_qubits = n_data + n_ancilla
-        circuit = EHA_circuit(n_qubits, n_layers)
-        n_params = circuit |> parameters |> length
-
-        return new{M}(
-            n_data,
-            n_ancilla,
-            n_qubits,
-            n_layers,
-            n_params,
-            circuit,
-            measurement,
-        )
-    end
 end
+
+function init_ansatz(
+    ::Type{T},
+    circuit_builder::Function;
+    n_data::Int64,
+    n_ancilla::Int64,
+    n_layers::Int64,
+    n_subblocks::Int64,
+    measurement::M,
+) where {T <: AbstractAnsatz, M <: AbstractMeasurement}
+    n_data <= 0 && throw(DomainError("Number of data qubits should be a positive integer."))
+    n_ancilla <= 0 && throw(DomainError("Number of ancilla qubits should be a positive integer."))
+
+    n_qubits = n_data + n_ancilla
+
+    if n_subblocks == 0
+        circuit = circuit_builder(n_qubits, n_layers)
+    elseif n_subblocks > 0
+        if n_layers % n_subblocks == 0
+            circuit = circuit_builder(n_qubits, n_layers, n_subblocks)
+        else
+            error("Number of layers should be an integer multiple of number of subblocks.")
+        end
+    elseif n_subblocks < 0
+        throw(DomainError("Number of data qubits should be a positive integer."))
+    end
+
+    n_params = circuit |> parameters |> length
+
+    return T{M}(
+        n_data,
+        n_ancilla,
+        n_qubits,
+        n_layers,
+        n_subblocks,
+        n_params,
+        circuit,
+        measurement,
+    )
+end
+
+HEA(; kwargs...) = init_ansatz(HEA, HEA_circuit; kwargs...)
+EHA(; kwargs...) = init_ansatz(EHA, EHA_circuit; kwargs...)
 
 
 export TrainConfig

@@ -50,7 +50,7 @@ function CircleDist(;
 )
     @assert n_qubits == 1 "Circle distribution is defined only for 1 qubit."
 
-    phis = rand(Float64, n_samples) * 2pi
+    phis = rand(Float64, n_samples) * 2π
     ensemble_gen = ([cos(phis[i]), sin(phis[i])] .|> ComplexF64 for i in 1:n_samples)
     ensemble = reduce(hcat, ensemble_gen)
 

@@ -40,7 +40,7 @@ struct Diffusion <: AbstractTrajectory
                     # Generate random parameters scaled by the weight schedule for this step
                     params = vcat(
                         weight_schedule[prev_t] .*
-                        (rand(RNG, Float64, n_qubits * 3) .* (pi / 4) .- (pi / 8)),
+                        (rand(RNG, Float64, n_qubits * 3) .* (π/4) .- (π/8)),
                         weight_schedule[prev_t] .*
                         (rand(RNG, Float64, binomial(n_qubits, 2)) .* 0.2 .+ 0.4) ./
                         (2.0 * sqrt(n_qubits)),
