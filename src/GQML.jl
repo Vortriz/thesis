@@ -26,12 +26,12 @@ using PlutoSerialization
 const RNG = Xoshiro(6868)
 
 # Order is important
-include("circuits.jl")
 include("types.jl")
 include("distributions.jl")
 include("trajectory.jl")
 include("measurement.jl")
 include("arch.jl")
+include("ansatz.jl")
 include("losses.jl")
 include("utils.jl")
 include("plotting.jl")

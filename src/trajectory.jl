@@ -1,9 +1,12 @@
-export AbstractTrajectory, ArbitraryTrajectory, Diffusion, Direct
+export AbstractTrajectory, ArbitraryTrajectory
 abstract type AbstractTrajectory end
 
 struct ArbitraryTrajectory <: AbstractTrajectory
     steps::Vector{AbstractDist}
 end
+
+
+export Direct
 
 struct Direct <: AbstractTrajectory
     steps::Vector{AbstractDist}
@@ -14,6 +17,30 @@ struct Direct <: AbstractTrajectory
     )
         return new(AbstractDist[initial_dist, target_dist])
     end
+end
+
+
+export Diffusion, scramble_circuit
+
+RZZ(n::Int64, i::Int64, j::Int64)::ChainBlock{2} =
+    chain(n, control(i, j => X), put(j => Rz(0)), control(i, j => X))
+
+function scramble_circuit(n_qubits::Int64)::ChainBlock{2}
+    register = 1:n_qubits
+    circuit = chain(n_qubits)
+
+    for i in register
+        push!(circuit, put(i => Rz(0)))
+        push!(circuit, put(i => Ry(0)))
+        push!(circuit, put(i => Rz(0)))
+    end
+
+    RZZ_combinations = combinations(register, 2)
+    for (i, j) in RZZ_combinations
+        push!(circuit, RZZ(n_qubits, i, j))
+    end
+
+    return Optimise.canonicalize(circuit)
 end
 
 struct Diffusion <: AbstractTrajectory

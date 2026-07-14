@@ -35,7 +35,7 @@ end
 html"""
 <style>
 main {
-	max-width: 1000px
+    max-width: 1000px
 }
 </style>
 """
@@ -43,12 +43,12 @@ main {
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
     const T = 6
-    const TB_LOGGING = true
+    const TB_LOGGING = false
 
-    ansatz = HEA(;
-        n_data=5,
-        n_ancilla=3,
-        n_layers=4,
+    ansatz = EHA(;
+        n_data=2,
+        n_ancilla=1,
+        n_layers=3,
         measurement=Normal(),
     )
 
@@ -63,17 +63,18 @@ begin
 
     config = TrainConfig(
         Direct(;
-               initial_dist=initial_dist,
-               target_dist=target_dist,
+            initial_dist=initial_dist,
+            target_dist=target_dist,
         );
         # Diffusion(;
         #     target_dist=target_dist,
-        #     weight_schedule=Base.LinRange(0.75, 5, T) |> collect,
+        #     weight_schedule=Base.LinRange(0.75, 5.5, T) |> collect,
         # );
         batch_size=400,
-        epoch_schedule=vcat([300, 300], fill(600, T-2)),
+        epoch_schedule=vcat(fill(300, 3), fill(600, T-3)),
     )
 
+    params = rand(Float64, (ansatz.n_params, config.T))
     optimizer = Optimisers.AMSGrad(0.03)
     plots = Dict{String, CairoMakie.Figure}()
 end;
@@ -101,7 +102,7 @@ end
 # ╔═╡ 2df9ad2c-2b71-4f18-a6c9-764638df4307
 if ansatz.n_data == 1
     plots["target_bloch"] = GQML.plot_bloch(;
-        steps=config.trajectory.steps |> reverse,
+        steps=(config.trajectory.steps |> reverse),
         title="Diffusion Trajectory",
         ref_dist=initial_dist,
         ref_label="Haar Distribution",
@@ -112,7 +113,7 @@ end
 if typeof(config.trajectory) == Diffusion
     plots["diffusion_trajectory"] = GQML.plot(
         typeof(target_dist);
-        steps=config.trajectory.steps |> reverse,
+        steps=(config.trajectory.steps |> reverse),
         title="Diffusion trajectory",
         ref_dist=initial_dist,
         ref_label="Haar Distribution",
@@ -123,6 +124,7 @@ end
 loss_history, params = train(
     ansatz,
     config;
+    params=params,
     optimizer=optimizer,
     callback=(loss) -> begin
         if TB_LOGGING == true

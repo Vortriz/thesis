@@ -22,16 +22,15 @@ export train
 function train(
     ansatz::A,
     config::TrainConfig;
+    params::Matrix{Float64},
     optimizer::Optimisers.AbstractRule,
     callback=(loss, step) -> nothing,
 ) where {A <: AbstractAnsatz}
-    params = zeros(Float64, (ansatz.n_params, config.T))
     loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
-
     current_reg = deepcopy(config.trajectory.steps[begin].register)
 
     @progress for t in 1:config.T
-        current_params = rand(RNG, Float64, ansatz.n_params)
+        current_params = params[:, t]
         opt_state = Optimisers.setup(optimizer, current_params)
 
         append_qubits!(current_reg, ansatz.n_ancilla)

@@ -1,70 +1,72 @@
 export AbstractAnsatz, HEA, EHA
 abstract type AbstractAnsatz end
 
-struct HEA{M <: AbstractMeasurement} <: AbstractAnsatz
-    n_data::Int64
-    n_ancilla::Int64
-    n_qubits::Int64
-    n_layers::Int64
-    n_subblocks::Int64
-    n_params::Int64
-    circuit::ChainBlock{2}
-    measurement::M
-end
+macro ansatz(name)
+    return quote
+        struct $name{M <: AbstractMeasurement} <: AbstractAnsatz
+            n_data::Int64
+            n_ancilla::Int64
+            n_qubits::Int64
+            n_layers::Union{Int64, Vector{Int64}}
+            n_params::Int64
+            circuit::ChainBlock{2}
+            measurement::M
 
-struct EHA{M <: AbstractMeasurement} <: AbstractAnsatz
-    n_data::Int64
-    n_ancilla::Int64
-    n_qubits::Int64
-    n_layers::Int64
-    n_subblocks::Int64
-    n_params::Int64
-    circuit::ChainBlock{2}
-    measurement::M
-end
+            function $name(;
+                n_data::Int64,
+                n_ancilla::Int64,
+                n_layers::Union{Int64, Vector{Int64}},
+                measurement::M,
+            ) where {M <: AbstractMeasurement}
+                n_data <= 0 && throw(
+                    DomainError(
+                        n_data,
+                        "Number of data qubits should be a positive integer",
+                    ),
+                )
+                n_ancilla <= 0 && throw(
+                    DomainError(
+                        n_ancilla,
+                        "Number of ancilla qubits should be a positive integer",
+                    ),
+                )
+                n_qubits = n_data + n_ancilla
 
-function init_ansatz(
-    ::Type{T},
-    circuit_builder::Function;
-    n_data::Int64,
-    n_ancilla::Int64,
-    n_layers::Int64,
-    n_subblocks::Int64,
-    measurement::M,
-) where {T <: AbstractAnsatz, M <: AbstractMeasurement}
-    n_data <= 0 && throw(DomainError("Number of data qubits should be a positive integer."))
-    n_ancilla <= 0 && throw(DomainError("Number of ancilla qubits should be a positive integer."))
+                if n_layers isa Int64
+                    n_layers <= 0 && throw(
+                        DomainError(
+                            n_layers,
+                            "Number of layers should be a positive integer",
+                        ),
+                    )
+                elseif n_layers isa Vector{Int64}
+                    any(i -> i <= 1, n_layers) && throw(
+                        DomainError(
+                            n_layers,
+                            "Number of unmirrored layers for each subblock should be > 1",
+                        ),
+                    )
+                end
 
-    n_qubits = n_data + n_ancilla
+                circuit = ansatz($name{typeof(measurement)}, n_qubits, n_layers)
+                n_params = nparameters(circuit)
 
-    if n_subblocks == 0
-        circuit = circuit_builder(n_qubits, n_layers)
-    elseif n_subblocks > 0
-        if n_layers % n_subblocks == 0
-            circuit = circuit_builder(n_qubits, n_layers, n_subblocks)
-        else
-            error("Number of layers should be an integer multiple of number of subblocks.")
+                return new{M}(
+                    n_data,
+                    n_ancilla,
+                    n_qubits,
+                    n_layers,
+                    n_params,
+                    circuit,
+                    measurement,
+                )
+            end
         end
-    elseif n_subblocks < 0
-        throw(DomainError("Number of data qubits should be a positive integer."))
-    end
-
-    n_params = circuit |> parameters |> length
-
-    return T{M}(
-        n_data,
-        n_ancilla,
-        n_qubits,
-        n_layers,
-        n_subblocks,
-        n_params,
-        circuit,
-        measurement,
-    )
+    end |> esc
 end
 
-HEA(; kwargs...) = init_ansatz(HEA, HEA_circuit; kwargs...)
-EHA(; kwargs...) = init_ansatz(EHA, EHA_circuit; kwargs...)
+@ansatz HEA
+@ansatz EHA
 
 
 export TrainConfig
@@ -100,7 +102,7 @@ function TrainConfig(
     epoch_schedule::Vector{Int64},
 )
     T = length(epoch_schedule)
-    @assert length(trajectory.steps) == T + 1 "Diffusion trajectory must have length(epoch_schedule)+1 steps."
+    @assert length(trajectory.steps) == T + 1 "Diffusion trajectory must have length(epoch_schedule)+1 steps"
 
     dataset_size = trajectory.steps[end].register.nbatch
 

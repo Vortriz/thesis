@@ -22,7 +22,7 @@ end
 
 # ╔═╡ 3a7242d3-4662-4f79-81aa-7883e3eb24cd
 begin
-	using CUDA
+    using CUDA
     @revise using GQML
     import Optimisers
     using PlutoSerialization
@@ -34,7 +34,7 @@ begin
     path = joinpath(
         base_path,
         "data",
-        "2026-06-03_11-17-04",
+        "2026-06-03_16-18-46",
     )
 
     model = open(deserialize, joinpath(path, "model.jls"))
@@ -79,10 +79,7 @@ plots["generated_trajectory"] = GQML.plot(
 )
 
 # ╔═╡ be71bd87-05b8-4573-8742-ab44f8f8c255
-GQML.save(
-	path,
-	plots,
-)
+GQML.save(path, plots)
 
 # ╔═╡ Cell order:
 # ╟─8326465a-1e33-442f-94fe-6b94f42702a4
