@@ -42,13 +42,13 @@ main {
 
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
-    const T = 6
+    const T = 7
     const TB_LOGGING = true
 
     ansatz = EHA(;
-        n_data=8,
+        n_data=9,
         n_ancilla=5,
-        n_layers=8,
+        n_layers=12,
         measurement=Normal(),
     )
 
@@ -56,10 +56,11 @@ begin
         n_qubits=ansatz.n_data,
         n_samples=5000,
     ) |> cu
-    target_dist = TFIMDist(;
-        n_qubits=ansatz.n_data,
-        g=range(0.2, 0.4; length=5000) |> collect,
-    ) |> cu
+    target_dist =
+        TFIMDist(;
+            n_qubits=ansatz.n_data,
+            g=range(0.2, 0.4; length=5000) |> collect,
+        ) |> cu
 
     config = TrainConfig(
         Direct(;
@@ -71,7 +72,7 @@ begin
         #     weight_schedule=Base.LinRange(0.75, 5.5, T) |> collect,
         # );
         batch_size=400,
-        epoch_schedule=vcat(fill(300, 3), fill(600, T-3)),
+        epoch_schedule=vcat(fill(400, 3), fill(600, T - 3)),
     )
 
     initial_params = RandParams(ansatz, config.T)

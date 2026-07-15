@@ -103,8 +103,8 @@ function inference(
     ansatz::A,
     config::TrainConfig,
     distribution::E,
-    params::P,
-) where {A <: AbstractAnsatz, E <: AbstractDist, P <: AbstractParams}
+    params::Matrix{Float64},
+) where {A <: AbstractAnsatz, E <: AbstractDist}
     trajectory = Vector{AbstractDist}(undef, config.T + 1)
     trajectory[begin] = deepcopy(distribution)
     current_reg = deepcopy(distribution.register)
