@@ -26,8 +26,9 @@ function train(
     optimizer::Optimisers.AbstractRule,
     callback=(loss, step) -> nothing,
 ) where {A <: AbstractAnsatz}
+    params = deepcopy(params)
     loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
-    current_reg = deepcopy(config.trajectory.steps[begin].register)
+    current_reg = deepcopy(config.trajectory[begin].register)
 
     @progress for t in 1:config.T
         current_params = params[:, t]
@@ -36,9 +37,9 @@ function train(
         append_qubits!(current_reg, ansatz.n_ancilla)
 
         if typeof(config) == TrainConfig{Direct}
-            target_matrix = config.trajectory.steps[end].register.state
+            target_matrix = config.trajectory[end].register.state
         elseif typeof(config) == TrainConfig{Diffusion}
-            target_matrix = config.trajectory.steps[t+1].register.state
+            target_matrix = config.trajectory[t+1].register.state
         end
 
         @progress for epoch in 1:config.epoch_schedule[t]
@@ -102,8 +103,8 @@ function inference(
     ansatz::A,
     config::TrainConfig,
     distribution::E,
-    params::Matrix{Float64},
-) where {A <: AbstractAnsatz, E <: AbstractDist}
+    params::P,
+) where {A <: AbstractAnsatz, E <: AbstractDist, P <: AbstractParams}
     trajectory = Vector{AbstractDist}(undef, config.T + 1)
     trajectory[begin] = deepcopy(distribution)
     current_reg = deepcopy(distribution.register)

@@ -43,7 +43,7 @@ macro ansatz(name)
                     any(i -> i <= 1, n_layers) && throw(
                         DomainError(
                             n_layers,
-                            "Number of unmirrored layers for each subblock should be > 1",
+                            "Number of layers for each subblock should be a positive even integer >= 4",
                         ),
                     )
                 end
@@ -85,7 +85,7 @@ function TrainConfig(
     epoch_schedule::Vector{Int64},
 )
     T = length(epoch_schedule)
-    dataset_size = trajectory.steps[end].register.nbatch
+    dataset_size = trajectory[end].register.nbatch
 
     return TrainConfig{Direct}(
         dataset_size,
@@ -104,7 +104,7 @@ function TrainConfig(
     T = length(epoch_schedule)
     @assert length(trajectory.steps) == T + 1 "Diffusion trajectory must have length(epoch_schedule)+1 steps"
 
-    dataset_size = trajectory.steps[end].register.nbatch
+    dataset_size = trajectory[end].register.nbatch
 
     return TrainConfig{Diffusion}(
         dataset_size,

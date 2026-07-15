@@ -34,7 +34,7 @@ begin
     path = joinpath(
         base_path,
         "data",
-        "2026-06-03_16-18-46",
+        "2026-07-14_14-44-26",
     )
 
     model = open(deserialize, joinpath(path, "model.jls"))

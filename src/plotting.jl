@@ -95,6 +95,8 @@ function plot_bloch(
     return fig
 end
 
+# [TODO] steps -> trajectory (and dispatch over it)
+
 function plot_bloch(;
     steps::Vector{AbstractDist},
     title::String,
@@ -215,7 +217,7 @@ function plot(
 
     scatter!(
         ax,
-        length(distances)-1, expect(Y, ref_dist.register) .|> abs2 |> mean;
+        length(distances) - 1, expect(Y, ref_dist.register) .|> abs2 |> mean;
         alpha=0.0, strokecolor=:black, strokewidth=2,
         label=ref_label,
     )

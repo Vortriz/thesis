@@ -23,8 +23,8 @@ function create_layer(::Type{HEA{M}}, n_qubits::Int64) where {M <: AbstractMeasu
 end
 
 # Entanglement-variational Hardware-efficient Ansatz
-@const_gate Rxp::ComplexF64 = Rx(π/2) |> mat
-@const_gate Rxn::ComplexF64 = Rx(-π/2) |> mat
+@const_gate Rxp::ComplexF64 = Rx(π / 2) |> mat
+@const_gate Rxn::ComplexF64 = Rx(-π / 2) |> mat
 
 XX(i::Int64) = chain(cnot(i, i + 1), put(i => Rx(0)), cnot(i, i + 1))
 ZZ(i::Int64) = chain(cnot(i, i + 1), put(i + 1 => Rz(0)), cnot(i, i + 1))
@@ -77,16 +77,33 @@ function ansatz(
 end
 
 
-export identity_params
+export IdentityParams, RandParams
 
-function identity_params(ansatz::A) where {A <: AbstractAnsatz}
-    params = Vector{Float64}()
-    n_params_per_layer = create_layer(typeof(ansatz), ansatz.n_qubits) |> nparameters
-    for subblock_size in ansatz.n_layers
-        subblock_params = rand(RNG, Float64, n_params_per_layer * subblock_size)
-        append!(params, subblock_params)
-        append!(params, reverse(-subblock_params))
+struct IdentityParams <: AbstractParams
+    params::Matrix{Float64}
+
+    function IdentityParams(ansatz::A, T::Int64) where {A <: AbstractAnsatz}
+        T <= 0 && throw(DomainError(T, "T should be a positive integer"))
+
+        params = Vector{Matrix{Float64}}()
+        n_params_per_layer = ansatz.n_params ÷ sum(ansatz.n_layers)
+        for subblock_size in ansatz.n_layers
+            half_subblock_params =
+                rand(RNG, Float64, (n_params_per_layer * subblock_size ÷ 2, T))
+            push!(params, half_subblock_params)
+            push!(params, reverse(-half_subblock_params))
+        end
+
+        return new(reduce(vcat, params))
     end
+end
 
-    return params
+struct RandParams <: AbstractParams
+    params::Matrix{Float64}
+
+    function RandParams(ansatz::A, T::Int64) where {A <: AbstractAnsatz}
+        T <= 0 && throw(DomainError(T, "T should be a positive integer"))
+
+        return new(rand(RNG, Float64, (ansatz.n_params, T)))
+    end
 end

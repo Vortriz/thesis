@@ -43,23 +43,23 @@ main {
 # ╔═╡ 7479301c-85c0-4773-bc5d-1195c7cb47ad
 begin
     const T = 6
-    const TB_LOGGING = false
+    const TB_LOGGING = true
 
     ansatz = EHA(;
-        n_data=2,
-        n_ancilla=1,
-        n_layers=3,
+        n_data=8,
+        n_ancilla=5,
+        n_layers=8,
         measurement=Normal(),
     )
 
     initial_dist = HaarDist(;
         n_qubits=ansatz.n_data,
         n_samples=5000,
-    )
+    ) |> cu
     target_dist = TFIMDist(;
         n_qubits=ansatz.n_data,
         g=range(0.2, 0.4; length=5000) |> collect,
-    )
+    ) |> cu
 
     config = TrainConfig(
         Direct(;
@@ -74,7 +74,8 @@ begin
         epoch_schedule=vcat(fill(300, 3), fill(600, T-3)),
     )
 
-    params = rand(Float64, (ansatz.n_params, config.T))
+    initial_params = RandParams(ansatz, config.T)
+    # initial_params = IdentityParams(ansatz, config.T)
     optimizer = Optimisers.AMSGrad(0.03)
     plots = Dict{String, CairoMakie.Figure}()
 end;
@@ -94,7 +95,7 @@ begin
             min_level=Logging.Info,
         )
         @info "Saving at $save_path"
-        GQML.log_hyperparams(tbl, ansatz, config)
+        GQML.log_hyperparams(tbl, ansatz, config, initial_params)
         GQML.log_optim(tbl, optimizer)
     end
 end
@@ -124,7 +125,7 @@ end
 loss_history, params = train(
     ansatz,
     config;
-    params=params,
+    params=initial_params.params,
     optimizer=optimizer,
     callback=(loss) -> begin
         if TB_LOGGING == true

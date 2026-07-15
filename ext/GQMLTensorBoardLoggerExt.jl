@@ -1,6 +1,6 @@
 module GQMLTensorBoardLoggerExt
 
-using GQML: GQML, AbstractAnsatz, TrainConfig
+using GQML: GQML, AbstractAnsatz, TrainConfig, AbstractParams
 import Optimisers
 using TensorBoardLogger: TBLogger, log_text
 
@@ -8,6 +8,7 @@ function GQML.log_hyperparams(
     tbl::TBLogger,
     ansatz::AbstractAnsatz,
     config::TrainConfig,
+    initial_params::AbstractParams,
 )
     for field in [:n_data, :n_ancilla, :n_qubits, :n_layers]
         log_text(
@@ -50,6 +51,13 @@ function GQML.log_hyperparams(
         tbl,
         "target_dist",
         config.trajectory.steps[end] |> typeof |> string;
+        step=0,
+    )
+
+    log_text(
+        tbl,
+        "initialization",
+        initial_params |> typeof |> string;
         step=0,
     )
 

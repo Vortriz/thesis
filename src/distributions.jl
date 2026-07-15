@@ -1,6 +1,3 @@
-export AbstractDist
-abstract type AbstractDist end
-
 macro dist_struct(name)
     return quote
         struct $name <: AbstractDist
