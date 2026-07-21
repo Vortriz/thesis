@@ -37,4 +37,6 @@ class Model(nnx.Module):
 
         # Parameters: (T, n_layers, n_qubits, 2)
         # Using uniform initialization to match Julia's rand(Float64)
-        self.params = nnx.Param(jax.random.uniform(rngs.params(), (self.T, n_layers, self.n_qubits, 2)))
+        self.params = nnx.Param(
+            jax.random.uniform(rngs.params(), (self.T, n_layers, self.n_qubits, 2))
+        )

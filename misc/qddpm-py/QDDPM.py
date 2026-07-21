@@ -99,7 +99,9 @@ def plot_forward_fidelity_decay(forward_states, rng):
 
     fidelity_evolution = np.zeros(shape=T + 1)
     for t in range(T + 1):
-        fidelity_evolution[t] = mmd_distance(forward_states[t], gen_haar_ensemle(n_qubits, n_forward_samples, rng))
+        fidelity_evolution[t] = mmd_distance(
+            forward_states[t], gen_haar_ensemle(n_qubits, n_forward_samples, rng)
+        )
 
     plt.figure()
     plt.plot(range(T + 1), fidelity_evolution, marker="o")
@@ -309,9 +311,13 @@ class ForwardProcess:
         """
         base_state = rng.random(2**self.n_qubits)
 
-        states = np.zeros((self.n_forward_samples, 2**self.n_qubits), dtype=np.complex128)
+        states = np.zeros(
+            (self.n_forward_samples, 2**self.n_qubits), dtype=np.complex128
+        )
         for i in range(self.n_forward_samples):
-            perturbation = rng.standard_normal(2**self.n_qubits) + 1j * rng.standard_normal(2**self.n_qubits)
+            perturbation = rng.standard_normal(
+                2**self.n_qubits
+            ) + 1j * rng.standard_normal(2**self.n_qubits)
             states[i] = base_state + self.scale * perturbation
 
         normalized_states = states / np.linalg.norm(states, axis=1, keepdims=True)
@@ -859,7 +865,9 @@ class BackwardProcess(nn.Module):
             (self.T + 1, self.n_backward_samples, 2**self.n_qubits),
             dtype=torch.complex128,
         )
-        backward_states[self.T] = gen_haar_ensemle(self.n_qubits, self.n_backward_samples, state)
+        backward_states[self.T] = gen_haar_ensemle(
+            self.n_qubits, self.n_backward_samples, state
+        )
 
         for t in range(self.T - 1, -1, -1):
             with torch.no_grad():

@@ -12,7 +12,9 @@ class DistributionType(Enum):
     HAAR = "haar"
     QKR = "qkr"
 
+
 # [TODO] use nnx.Rngs
+
 
 @dispatch
 def gen_dist(
@@ -27,9 +29,8 @@ def gen_dist(
     k1, k2 = random.split(key)
     base_state = random.normal(k1, (1, basis_size), dtype=jnp.complex128)
 
-    states = (
-        jnp.repeat(base_state, n_samples, axis=0)
-        + scale * random.normal(k2, (n_samples, basis_size), dtype=jnp.complex128)
+    states = jnp.repeat(base_state, n_samples, axis=0) + scale * random.normal(
+        k2, (n_samples, basis_size), dtype=jnp.complex128
     )
 
     states /= jnp.linalg.norm(states, axis=1, keepdims=True)

@@ -18,7 +18,6 @@ with app.setup:
         plot_forward_fidelity_decay,
         plot_loss_evaluation_vs_initial,
         plot_loss_training_vs_initial,
-        gen_haar_ensemle,
     )
 
     rng = np.random.default_rng(1234)
@@ -247,7 +246,8 @@ def _(qutip):
 
         for i in range(samples.shape[0]):
             state = samples[i][0] * qutip.basis(2, 0) + samples[i][1] * qutip.basis(
-                2, 1,
+                2,
+                1,
             )
             points[i] = [
                 qutip.expect(qutip.sigmax(), state),

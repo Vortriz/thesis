@@ -17,7 +17,7 @@ with app.setup:
     #     hardware_efficient_ansatz,
     # )
     from src.distributions import DistributionType, gen_dist
-    from src.losses import mmd_distance, wasserstein_distance
+    from src.losses import wasserstein_distance
     from src.measurement import measure_stochastic
     from src.plotting import plot_bloch_sphere, plot_loss_training_vs_initial
     from src.types import Model
@@ -79,7 +79,7 @@ def _(Array, model):
     # @qml.qjit
     @qml.qnode(dev, interface="jax")
     def pqc_block(n_data, n_layers, params: Array, state: Array):
-        # Only prepare the data qubits. 
+        # Only prepare the data qubits.
         # Ancilla qubits (n_data to n_qubits-1) stay in |0> by default.
         qml.StatePrep(state, wires=range(n_data))
 
@@ -90,7 +90,7 @@ def _(Array, model):
                 qml.RX(params[layer, i, 0], wires=wires[i])
                 qml.RY(params[layer, i, 1], wires=wires[i])
 
-            for (i, j) in entangle_pairs:
+            for i, j in entangle_pairs:
                 qml.CZ(wires=[wires[i], wires[j]])
 
         return qml.state()
@@ -98,9 +98,7 @@ def _(Array, model):
     @jax.jit
     def apply_pqc(key: Array, model: Model, params: Array, state: Array):
         # We pass the small data state directly to the QNode
-        output_state = pqc_block(
-            model.n_data, model.n_layers, params, state
-        )
+        output_state = pqc_block(model.n_data, model.n_layers, params, state)
 
         return measure_stochastic(key, model, output_state)
 
@@ -143,7 +141,9 @@ def _(T, apply_pqc, loss_fn, model, rngs, target_ensemble):
             _, pqc_key = random.split(current_key)
 
             # Pass 't' and the FULL target_ensemble to the global loss_fn
-            loss, grads = nnx.value_and_grad(loss_fn)(model, t, pqc_key, current_ensemble, target_ensemble)
+            loss, grads = nnx.value_and_grad(loss_fn)(
+                model, t, pqc_key, current_ensemble, target_ensemble
+            )
             losses = losses.at[epoch].set(loss)
 
             optimizer.update(model, grads)
@@ -161,7 +161,9 @@ def _(T, apply_pqc, loss_fn, model, rngs, target_ensemble):
 
 @app.cell
 def _(loss_history):
-    plot_loss_training_vs_initial(loss_history, title="Training Loss (Sequential Wasserstein)")
+    plot_loss_training_vs_initial(
+        loss_history, title="Training Loss (Sequential Wasserstein)"
+    )
     return
 
 
@@ -211,17 +213,13 @@ def _():
         state_vector = column / jnp.sqrt(diag[idx])
         return state_vector
 
-
     pure_dm_to_state_vmap = jax.vmap(pure_dm_to_state, in_axes=0)
     return
 
 
 @app.cell
 def _(haar, target_ensemble):
-    wasserstein_distance(
-        target_ensemble,
-        haar
-    )
+    wasserstein_distance(target_ensemble, haar)
     return
 
 

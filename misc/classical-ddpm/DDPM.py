@@ -183,7 +183,9 @@ def _(
     def sample(model, weights=None):
         if weights is not None:
             model = deepinv.models.DiffUNet(
-                in_channels=1, out_channels=1, pretrained=weights,
+                in_channels=1,
+                out_channels=1,
+                pretrained=weights,
             )
 
         model.eval()

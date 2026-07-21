@@ -1,8 +1,9 @@
+from functools import partial
+
 import jax
 import jax.numpy as jnp
-from jaxtyping import Array
 from jax import jit
-from functools import partial
+from jaxtyping import Array
 
 
 @jit
@@ -63,8 +64,10 @@ def ipot(
     u_init = jnp.ones(n1)
     v_init = jnp.ones(n2)
 
-    (P_final, _, _), _ = jax.lax.scan(scan_body, (P_init, u_init, v_init), None, length=max_iter)
-    
+    (P_final, _, _), _ = jax.lax.scan(
+        scan_body, (P_init, u_init, v_init), None, length=max_iter
+    )
+
     return P_final
 
 

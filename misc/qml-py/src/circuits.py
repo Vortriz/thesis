@@ -1,6 +1,3 @@
-from collections.abc import Callable
-
-import jax
 import jax.numpy as jnp
 import pennylane as qml
 from flax import nnx
@@ -9,12 +6,11 @@ from jaxtyping import Array
 from .measurement import measure_stochastic
 from .types import Model
 
-
 # [TODO] qjit, catalyst, https://docs.pennylane.ai/en/stable/news/program_capture_sharp_bits.html#parameter-broadcasting-and-vmap
 
 
-
 dev = qml.device("default.qubit", wires=model.n_qubits)
+
 
 @qml.qnode(dev, interface="jax")
 def pqc(rngs: nnx.Rngs, model: Model, state: Array, params: Array):

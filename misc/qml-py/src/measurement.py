@@ -1,15 +1,13 @@
 import jax
 import jax.numpy as jnp
-from jaxtyping import Array, PRNGKeyArray
-from src.types import Model
-from flax import nnx
 from jax import jit
+from jaxtyping import Array, PRNGKeyArray
+
+from src.types import Model
 
 
 @jit
-def measure_stochastic(
-    key: PRNGKeyArray, model: Model, state: Array
-) -> Array:
+def measure_stochastic(key: PRNGKeyArray, model: Model, state: Array) -> Array:
     """
     Simulates a stochastic measurement of the ancilla qubits and returns
     the collapsed, normalized pure state for the data qubits.
