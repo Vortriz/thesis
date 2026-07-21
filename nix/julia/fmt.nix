@@ -1,16 +1,14 @@
 {
     perSystem =
-        { lib, pkgs, ... }:
-        let
-            juliaEnv = import ./_package.nix pkgs;
-            julia = lib.getExe juliaEnv;
-        in
+        { pkgs, ... }:
         {
             treefmt = {
                 settings.formatter = {
                     jlfmt = {
                         priority = 1;
-                        command = julia;
+                        command = pkgs.julia.withPackages.override {
+                            augmentedRegistry = pkgs.callPackage ./_registry.nix { };
+                        } [ "JuliaFormatter" ];
                         options = [ "${./fmt.jl}" ];
                         includes = [ "*.jl" ];
                     };

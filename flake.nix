@@ -41,12 +41,7 @@
             ];
 
             perSystem =
-                {
-                    self',
-                    lib,
-                    pkgs,
-                    ...
-                }:
+                { self', ... }:
                 {
                     pre-commit.settings.hooks = {
                         flake-checker = {
@@ -56,38 +51,6 @@
                         treefmt = {
                             enable = true;
                             package = self'.formatter;
-                        };
-                    };
-
-                    treefmt = {
-                        # Used to find the project root
-                        projectRootFile = "flake.nix";
-
-                        programs = {
-                            deadnix.enable = true;
-                            statix.enable = true;
-                            nixfmt = {
-                                enable = true;
-                                indent = 4;
-                            };
-                            prettier = {
-                                enable = true;
-                                settings.tabWidth = 4;
-                            };
-                        };
-
-                        settings = {
-                            formatter = {
-                                deadnix.priority = 1;
-                                statix.priority = 2;
-                                nixfmt.priority = 3;
-                                prettier.priority = 4;
-
-                                bibtex-tidy = {
-                                    command = lib.getExe pkgs.bibtex-tidy;
-                                    includes = [ "*.bib" ];
-                                };
-                            };
                         };
                     };
                 };

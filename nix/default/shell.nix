@@ -1,17 +1,15 @@
 {
     perSystem =
-        { pkgs, ... }:
+        { config, ... }:
         {
             devshells.default = {
                 devshell = {
                     name = "base";
                     motd = "";
+                    startup.default.text = config.pre-commit.shellHook;
                 };
 
-                packages = with pkgs; [
-                    # Search for available packages on https://search.nixos.org/packages
-
-                ];
+                packages = config.pre-commit.settings.enabledPackages;
             };
         };
 }
