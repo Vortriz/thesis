@@ -95,24 +95,22 @@ function plot_bloch(
     return fig
 end
 
-# [TODO] steps -> trajectory (and dispatch over it)
-
 function plot_bloch(;
-    steps::Vector{AbstractDist},
+    traj::AbstractTrajectory,
     title::String,
-    ref_dist::Union{Nothing, D}=nothing,
+    ref_dist::Union{Nothing, AbstractDist}=nothing,
     ref_label::Union{Nothing, String}=nothing,
-) where {D <: AbstractDist}
+)
     is_ref = !isnothing(ref_dist) && !isnothing(ref_label)
 
-    n_steps = is_ref ? length(steps) + 1 : length(steps)
+    n_steps = is_ref ? length(traj) + 1 : length(traj)
     n_cols = min(n_steps, 5)
     n_rows = ceil(Int, n_steps / n_cols)
     coords(t) = (t - 1) ÷ n_cols + 1, (t - 1) % n_cols + 1
 
     fig = Figure(; size=(400 * n_cols, 400 * n_rows + 50))
 
-    for (t, dist) in enumerate(steps)
+    for (t, dist) in enumerate(traj)
         row, col = coords(t)
         _bloch_helper!(fig[row, col], dist.register)
         Label(
@@ -142,13 +140,13 @@ end
 
 function plot(
     ::Type{ClusteredDist};
-    steps::Vector{AbstractDist},
+    traj::AbstractTrajectory,
     title::String,
-    ref_dist::Union{Nothing, D}=nothing,
+    ref_dist::Union{Nothing, AbstractDist}=nothing,
     ref_label::Union{Nothing, String}=nothing,
-) where {D <: AbstractDist}
+)
     distances = Float64[]
-    for step in steps
+    for step in traj
         push!(
             distances,
             mmd_distance(step.register.state, ref_dist.register.state),
@@ -183,13 +181,13 @@ end
 
 function plot(
     ::Type{CircleDist};
-    steps::Vector{AbstractDist},
+    traj::AbstractTrajectory,
     title::String,
-    ref_dist::Union{Nothing, D}=nothing,
+    ref_dist::Union{Nothing, AbstractDist}=nothing,
     ref_label::Union{Nothing, String}=nothing,
-) where {D <: AbstractDist}
+)
     distances = Float64[]
-    for step in steps
+    for step in traj
         push!(
             distances,
             expect(Y, step.register) .|> abs2 |> mean,
@@ -276,21 +274,21 @@ end
 
 function plot(
     ::Type{QKRLocalizedDist};
-    steps::Vector{AbstractDist},
+    traj::AbstractTrajectory,
     title::String,
-    ref_dist::Union{Nothing, D}=nothing,
+    ref_dist::Union{Nothing, AbstractDist}=nothing,
     ref_label::Union{Nothing, String}=nothing,
-) where {D <: AbstractDist}
+)
     is_ref = !isnothing(ref_dist) && !isnothing(ref_label)
 
-    n_steps = is_ref ? length(steps) + 1 : length(steps)
+    n_steps = is_ref ? length(traj) + 1 : length(traj)
     n_cols = min(n_steps, 5)
     n_rows = ceil(Int, n_steps / n_cols)
     coords(t) = (t - 1) ÷ n_cols + 1, (t - 1) % n_cols + 1
 
     fig = Figure(; size=(400 * n_cols, 400 * n_rows + 50))
 
-    for (t, dist) in enumerate(steps)
+    for (t, dist) in enumerate(traj)
         row, col = coords(t)
         _qkr_helper!(fig[row, col], dist.register, L"\textbf{Step $%$(t-1)$}")
     end
@@ -331,11 +329,11 @@ end
 
 function plot(
     ::Type{TFIMDist};
-    steps::Vector{AbstractDist},
+    traj::AbstractTrajectory,
     title::String,
-    ref_dist::Union{Nothing, D}=nothing,
+    ref_dist::Union{Nothing, AbstractDist}=nothing,
     ref_label::Union{Nothing, String}=nothing,
-) where {D <: AbstractDist}
+)
     fig = Figure()
     ax = Axis(
         fig[1, 1];
@@ -347,7 +345,7 @@ function plot(
     )
     xlims!(ax, 0, 1)
 
-    for (t, step) in enumerate(steps)
+    for (t, step) in enumerate(traj)
         density!(
             ax,
             magnetization(step.register);

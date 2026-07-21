@@ -82,7 +82,7 @@ export IdentityParams, RandParams
 struct IdentityParams <: AbstractParams
     params::Matrix{Float64}
 
-    function IdentityParams(ansatz::A, T::Int64) where {A <: AbstractAnsatz}
+    function IdentityParams(ansatz::AbstractAnsatz, T::Int64)
         T <= 0 && throw(DomainError(T, "T should be a positive integer"))
 
         params = Vector{Matrix{Float64}}()
@@ -101,7 +101,7 @@ end
 struct RandParams <: AbstractParams
     params::Matrix{Float64}
 
-    function RandParams(ansatz::A, T::Int64) where {A <: AbstractAnsatz}
+    function RandParams(ansatz::AbstractAnsatz, T::Int64)
         T <= 0 && throw(DomainError(T, "T should be a positive integer"))
 
         return new(rand(RNG, Float64, (ansatz.n_params, T)))

@@ -1,8 +1,8 @@
 function apply_pqc(
-    ansatz::A,
+    ansatz::AbstractAnsatz,
     register::Register,
     params::Vector{Float64},
-) where {A <: AbstractAnsatz}
+)
     output_register = apply(
         register,
         dispatch(ansatz.circuit, params),
@@ -20,12 +20,12 @@ end
 export train
 
 function train(
-    ansatz::A,
+    ansatz::AbstractAnsatz,
     config::TrainConfig;
     params::Matrix{Float64},
     optimizer::Optimisers.AbstractRule,
     callback=(loss, step) -> nothing,
-) where {A <: AbstractAnsatz}
+)
     params = deepcopy(params)
     loss_history = [zeros(Float64, n) for n in config.epoch_schedule]
     current_reg = deepcopy(config.trajectory[begin].register)
@@ -100,11 +100,11 @@ end
 export inference
 
 function inference(
-    ansatz::A,
+    ansatz::AbstractAnsatz,
     config::TrainConfig,
-    distribution::E,
+    distribution::AbstractDist,
     params::Matrix{Float64},
-) where {A <: AbstractAnsatz, E <: AbstractDist}
+)
     trajectory = Vector{AbstractDist}(undef, config.T + 1)
     trajectory[begin] = deepcopy(distribution)
     current_reg = deepcopy(distribution.register)
