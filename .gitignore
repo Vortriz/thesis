@@ -13,5 +13,8 @@ result*
 # SLURM
 logs/
 
+# openvpn configs
+openvpn/
+
 # Julia logging and checkpoints
 data/
