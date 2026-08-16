@@ -144,4 +144,4 @@ There are two possible direction to tackle the problem of convergence for larger
 
 I will explore both these directions in parallel.
 
-#bibliography("../../references.bib")
+#bibliography("/references.bib")
