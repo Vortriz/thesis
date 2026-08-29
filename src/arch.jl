@@ -102,7 +102,12 @@ function TrainConfig(
     epoch_schedule::Vector{Int64},
 )
     T = length(epoch_schedule)
-    @assert length(trajectory.steps) == T + 1 "Diffusion trajectory must have length(epoch_schedule)+1 steps"
+    length(trajectory.steps) != T + 1 && throw(
+        DomainError(
+            length(trajectory.steps),
+            "Diffusion trajectory must have length(epoch_schedule)+1 steps",
+        ),
+    )
 
     dataset_size = trajectory[end].register.nbatch
 

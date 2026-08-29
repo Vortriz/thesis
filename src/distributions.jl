@@ -45,7 +45,7 @@ function CircleDist(;
     n_qubits::Int64,
     n_samples::Int64,
 )
-    @assert n_qubits == 1 "Circle distribution is defined only for 1 qubit."
+    n_qubits != 1 && throw(DomainError("Circle distribution is defined only for 1 qubit"))
 
     phis = rand(Float64, n_samples) * 2π
     ensemble_gen = ([cos(phis[i]), sin(phis[i])] .|> ComplexF64 for i in 1:n_samples)
@@ -144,7 +144,7 @@ function TFIMDist(;
     n_qubits::Int64,
     g::Vector{Float64},
 )
-    @assert n_qubits >= 2 "TFIM distribution is defined only for more than 2 qubits."
+    n_qubits < 2 && throw(DomainError("TFIM distribution is defined only for more than 2 qubits."))
 
     ensemble = zeros(ComplexF64, (2^n_qubits, length(g)))
 

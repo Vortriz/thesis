@@ -78,7 +78,12 @@ function plot_bloch(
     dist::AbstractDist;
     square::Bool=false,
 )
-    @assert dist.n_qubits == 1 "Plotting on Bloch sphere is only available for 1 qubit system."
+    dist.n_qubits != 1 && throw(
+        DomainError(
+            dist.n_qubits,
+            "Plotting on Bloch sphere is only available for 1 qubit system",
+        ),
+    )
 
     fig = Figure()
     _bloch_helper!(fig[1, 1], dist.register)
