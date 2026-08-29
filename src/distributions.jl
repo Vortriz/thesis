@@ -62,6 +62,7 @@ function gen_qkr_operator(;
     n_qubits::Int64,
     K::Float64,
     ħₛ::Float64,
+    β::Float64,
 )::AbstractQuantumObject{Operator}
     dims = 2^n_qubits
     m_vec = [0:(dims/2-1); (-dims/2):-1]
@@ -71,13 +72,7 @@ function gen_qkr_operator(;
         i, j = idx.I
         m₁, m₂ = m_vec[i], m_vec[j]
         d = m₂ - m₁
-        if d > dims / 2
-            d -= dims
-        end
-        if d < -dims / 2
-            d += dims
-        end
-        U[idx] = ℯ^(-im / 2 * ħₛ * m₂^2) * im^d * besselj(d, K / ħₛ)
+        U[idx] = ℯ^(-im / 2 * ħₛ * (m₂ + β)^2) * im^d * besselj(d, K / ħₛ)
     end
 
     return QT.Qobj(U)
@@ -87,6 +82,7 @@ function QKRLocalizedDist(;
     n_qubits::Int64,
     K::Union{Float64, Vector{Float64}},
     ħₛ::Union{Float64, Vector{Float64}},
+    β::Float64=0.0,
 )
     if typeof(K) == Float64
         K = fill(K, length(ħₛ))
@@ -96,11 +92,14 @@ function QKRLocalizedDist(;
         ħₛ = fill(ħₛ, length(K))
     end
 
+    !(0 <= β < 1) && throw(DomainError(β, "β should belong to [0, 1)"))
+
     ensemble_gen = (
         gen_qkr_operator(;
             n_qubits=n_qubits,
             K=K[i],
             ħₛ=ħₛ[i],
+            β=β,
         ) |> QT.eigenstates |> evd -> evd.vectors
         for i in eachindex(K)
     )

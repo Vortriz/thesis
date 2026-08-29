@@ -32,7 +32,7 @@ md"# Classical Kicked Rotor"
 begin
     const N_ckr = 500    # number of step to evolve for
     const K_ckr = 0.7    # coupling strength
-end
+end;
 
 # ╔═╡ 30c6cfbf-23fd-4faf-95e6-4786316603f2
 function ckr_step!(x, p)
@@ -162,15 +162,11 @@ plot_qkr_energy_evolution(E)
 plot_qkr_localization(ψ)
 
 # ╔═╡ fea40b3b-dbc3-4059-b41c-b34d520efece
-md"""
-## Constructing the Floquet operator
-
-To show the localization of the eigenstates
-"""
+md"## Eigenstates of the Floquet operator"
 
 # ╔═╡ 10adf359-d158-4911-88ff-e14af3c6b607
 eigenstates = QKRLocalizedDist(;
-    n_qubits=10,
+    n_qubits=9,
     K=12.0,
     ħₛ=0.7,
 )
@@ -178,6 +174,23 @@ eigenstates = QKRLocalizedDist(;
 # ╔═╡ 9e0f1db0-d94f-4212-a2f7-a9be795c8fe1
 GQML.plot(
     eigenstates;
+    title="Exponential localization",
+)
+
+# ╔═╡ 7317819f-9d21-4b0d-a4b5-b8014e727ba8
+md"## With quasi-momentum"
+
+# ╔═╡ 5303b66f-e731-499a-8a3c-53f3875ca9a7
+eigenstates_quasi = QKRLocalizedDist(;
+    n_qubits=9,
+    K=12.0,
+    ħₛ=0.7,
+    β=0.8,
+)
+
+# ╔═╡ e561e8ac-3bf0-448d-b85a-5da5c99a9bea
+GQML.plot(
+    eigenstates_quasi;
     title="Exponential localization",
 )
 
@@ -200,3 +213,6 @@ GQML.plot(
 # ╟─fea40b3b-dbc3-4059-b41c-b34d520efece
 # ╠═10adf359-d158-4911-88ff-e14af3c6b607
 # ╠═9e0f1db0-d94f-4212-a2f7-a9be795c8fe1
+# ╟─7317819f-9d21-4b0d-a4b5-b8014e727ba8
+# ╠═5303b66f-e731-499a-8a3c-53f3875ca9a7
+# ╠═e561e8ac-3bf0-448d-b85a-5da5c99a9bea
