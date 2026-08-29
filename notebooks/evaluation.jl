@@ -62,7 +62,7 @@ generated_trajectory = inference(
 # ╔═╡ 13064c91-73e7-4514-adec-76f2f4f0ae10
 if ansatz.n_data == 1
     plots["generated_bloch"] = GQML.plot_bloch(;
-        steps=generated_trajectory.steps,
+        traj=generated_trajectory,
         title="Inference Trajectory",
         ref_dist=target_dist,
         ref_label="Target Distribution",
@@ -72,7 +72,7 @@ end
 # ╔═╡ e2418b03-7082-4d99-bd9b-8ea4f9ac0174
 plots["generated_trajectory"] = GQML.plot(
     typeof(target_dist);
-    steps=generated_trajectory.steps,
+    traj=generated_trajectory,
     title="Inference trajectory",
     ref_dist=target_dist,
     ref_label="Target Distribution",

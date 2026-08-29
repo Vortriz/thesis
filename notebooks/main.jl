@@ -104,7 +104,7 @@ end
 # ╔═╡ 2df9ad2c-2b71-4f18-a6c9-764638df4307
 if ansatz.n_data == 1
     plots["target_bloch"] = GQML.plot_bloch(;
-        steps=(config.trajectory.steps |> reverse),
+        traj=config.trajectory |> reverse |> ArbitraryTrajectory,
         title="Diffusion Trajectory",
         ref_dist=initial_dist,
         ref_label="Haar Distribution",
@@ -115,7 +115,7 @@ end
 if typeof(config.trajectory) == Diffusion
     plots["diffusion_trajectory"] = GQML.plot(
         typeof(target_dist);
-        steps=(config.trajectory.steps |> reverse),
+        traj=config.trajectory |> reverse |> ArbitraryTrajectory,
         title="Diffusion trajectory",
         ref_dist=initial_dist,
         ref_label="Haar Distribution",
