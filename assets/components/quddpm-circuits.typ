@@ -1,4 +1,4 @@
-#import "@preview/quill:0.7.3": *
+#import "@preview/quill:0.8.0": *
 #import "@preview/physica:0.9.8": *
 
 #import tequila as tq
