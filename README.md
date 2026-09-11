@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/1127783652.svg)](https://doi.org/10.5281/zenodo.22712380)
+
 ## Ongoing work
 
 Simulations in Julia
