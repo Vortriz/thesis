@@ -18,7 +18,7 @@ begin
     Pkg.develop(Pkg.PackageSpec(; path=base_path))
     Pkg.precompile()
 
-    using GQML
+    using QGML
     using CairoMakie
     using LinearAlgebra
     using FFTW
@@ -172,7 +172,7 @@ eigenstates = QKRLocalizedDist(;
 )
 
 # ╔═╡ 9e0f1db0-d94f-4212-a2f7-a9be795c8fe1
-GQML.plot(
+QGML.plot(
     eigenstates;
     title="Exponential localization",
 )
@@ -189,7 +189,7 @@ eigenstates_quasi = QKRLocalizedDist(;
 )
 
 # ╔═╡ e561e8ac-3bf0-448d-b85a-5da5c99a9bea
-GQML.plot(
+QGML.plot(
     eigenstates_quasi;
     title="Exponential localization",
 )

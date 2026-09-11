@@ -8,7 +8,7 @@ function apply_pqc(
         dispatch(ansatz.circuit, params),
     )
 
-    return GQML.measure(
+    return QGML.measure(
         ansatz.measurement;
         n_data=ansatz.n_data,
         n_ancilla=ansatz.n_ancilla,

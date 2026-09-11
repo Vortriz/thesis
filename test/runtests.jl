@@ -1,5 +1,5 @@
 using Test
 using JuliaFormatter
-import GQML
+import QGML
 
-@test format(GQML)
+@test format(QGML)

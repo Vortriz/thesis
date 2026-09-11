@@ -1052,16 +1052,16 @@ git-tree-sha1 = "a589b6c1a0eff953571f5d8b0474f5020831114d"
 uuid = "096a3bc2-3ced-46d0-87f4-dd12716f4bfc"
 version = "1.1.1"
 
-[[deps.GQML]]
+[[deps.QGML]]
 deps = ["Bessels", "CairoMakie", "Combinatorics", "LaTeXStrings", "LinearAlgebra", "Logging", "Optimisers", "PlutoSerialization", "ProgressLogging", "QuantumToolbox", "Random", "Statistics", "StatsBase", "Yao", "YaoPlots", "Zygote"]
 path = ".."
 uuid = "b07192c8-6623-4550-9f76-7af2dcc596be"
 version = "0.0.0"
 weakdeps = ["CUDA", "TensorBoardLogger"]
 
-    [deps.GQML.extensions]
-    GQMLCUDAExt = "CUDA"
-    GQMLTensorBoardLoggerExt = "TensorBoardLogger"
+    [deps.QGML.extensions]
+    QGMLCUDAExt = "CUDA"
+    QGMLTensorBoardLoggerExt = "TensorBoardLogger"
 
 [[deps.GeometryBasics]]
 deps = ["EarCut_jll", "Extents", "IterTools", "LinearAlgebra", "PrecompileTools", "Random", "StaticArrays"]

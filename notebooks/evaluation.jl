@@ -23,7 +23,7 @@ end
 # ╔═╡ 3a7242d3-4662-4f79-81aa-7883e3eb24cd
 begin
     using CUDA
-    @revise using GQML
+    @revise using QGML
     import Optimisers
     using PlutoSerialization
     using CairoMakie
@@ -61,7 +61,7 @@ generated_trajectory = inference(
 
 # ╔═╡ 13064c91-73e7-4514-adec-76f2f4f0ae10
 if ansatz.n_data == 1
-    plots["generated_bloch"] = GQML.plot_bloch(;
+    plots["generated_bloch"] = QGML.plot_bloch(;
         traj=generated_trajectory,
         title="Inference Trajectory",
         ref_dist=target_dist,
@@ -70,7 +70,7 @@ if ansatz.n_data == 1
 end
 
 # ╔═╡ e2418b03-7082-4d99-bd9b-8ea4f9ac0174
-plots["generated_trajectory"] = GQML.plot(
+plots["generated_trajectory"] = QGML.plot(
     typeof(target_dist);
     traj=generated_trajectory,
     title="Inference trajectory",
@@ -79,7 +79,7 @@ plots["generated_trajectory"] = GQML.plot(
 )
 
 # ╔═╡ be71bd87-05b8-4573-8742-ab44f8f8c255
-GQML.save(path, plots)
+QGML.save(path, plots)
 
 # ╔═╡ Cell order:
 # ╟─8326465a-1e33-442f-94fe-6b94f42702a4

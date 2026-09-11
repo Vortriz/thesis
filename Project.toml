@@ -1,4 +1,4 @@
-name = "GQML"
+name = "QGML"
 uuid = "b07192c8-6623-4550-9f76-7af2dcc596be"
 authors = ["Rishi Vora <vorarishi22@gmail.com>"]
 
@@ -35,8 +35,8 @@ Statistics = "1.11.1"
 TensorBoardLogger = "0.1.26"
 
 [extensions]
-GQMLCUDAExt = "CUDA"
-GQMLTensorBoardLoggerExt = "TensorBoardLogger"
+QGMLCUDAExt = "CUDA"
+QGMLTensorBoardLoggerExt = "TensorBoardLogger"
 
 [extras]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"

@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "a8aaf0493a1c238b1fcbcba8fe667a0651fd0bac"
+project_hash = "7a5615c93800041af2d819cddbdbad92e620a779"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "bbc22a9a08a0ef6460041086d8a7b27940ed4ffd"
@@ -897,20 +897,6 @@ deps = ["Adapt"]
 git-tree-sha1 = "83cf05ab16a73219e5f6bd1bdfa9848fa24ac627"
 uuid = "46192b85-c4d5-4398-a991-12ede77f4527"
 version = "0.2.0"
-
-[[deps.GQML]]
-deps = ["Bessels", "CairoMakie", "Combinatorics", "LaTeXStrings", "LinearAlgebra", "Logging", "Optimisers", "PlutoSerialization", "ProgressLogging", "QuantumToolbox", "Random", "Statistics", "StatsBase", "Yao", "YaoPlots", "Zygote"]
-path = "."
-uuid = "b07192c8-6623-4550-9f76-7af2dcc596be"
-version = "0.0.0"
-
-    [deps.GQML.extensions]
-    GQMLCUDAExt = "CUDA"
-    GQMLTensorBoardLoggerExt = "TensorBoardLogger"
-
-    [deps.GQML.weakdeps]
-    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-    TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 
 [[deps.GeometryBasics]]
 deps = ["EarCut_jll", "Extents", "IterTools", "LinearAlgebra", "PrecompileTools", "Random", "StaticArrays"]
@@ -1897,6 +1883,20 @@ version = "1.11.0"
 git-tree-sha1 = "4fbbafbc6251b883f4d2705356f3641f3652a7fe"
 uuid = "43287f4e-b6f4-7ad1-bb20-aadabca52c3d"
 version = "1.4.0"
+
+[[deps.QGML]]
+deps = ["Bessels", "CairoMakie", "Combinatorics", "LaTeXStrings", "LinearAlgebra", "Logging", "Optimisers", "PlutoSerialization", "ProgressLogging", "QuantumToolbox", "Random", "Statistics", "StatsBase", "Yao", "YaoPlots", "Zygote"]
+path = "."
+uuid = "b07192c8-6623-4550-9f76-7af2dcc596be"
+version = "0.0.0"
+
+    [deps.QGML.extensions]
+    QGMLCUDAExt = "CUDA"
+    QGMLTensorBoardLoggerExt = "TensorBoardLogger"
+
+    [deps.QGML.weakdeps]
+    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+    TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 
 [[deps.QOI]]
 deps = ["ColorTypes", "FileIO", "FixedPointNumbers"]

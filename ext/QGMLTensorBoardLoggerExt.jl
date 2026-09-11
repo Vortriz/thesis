@@ -1,10 +1,10 @@
-module GQMLTensorBoardLoggerExt
+module QGMLTensorBoardLoggerExt
 
-using GQML: GQML, AbstractAnsatz, TrainConfig, AbstractParams
+using QGML: QGML, AbstractAnsatz, TrainConfig, AbstractParams
 import Optimisers
 using TensorBoardLogger: TBLogger, log_text
 
-function GQML.log_hyperparams(
+function QGML.log_hyperparams(
     tbl::TBLogger,
     ansatz::AbstractAnsatz,
     config::TrainConfig,
@@ -64,7 +64,7 @@ function GQML.log_hyperparams(
     return
 end
 
-function GQML.log_optim(
+function QGML.log_optim(
     tbl::TBLogger,
     optimizer::Optimisers.AbstractRule,
 )

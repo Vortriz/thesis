@@ -17,7 +17,7 @@ begin
     Pkg.develop(Pkg.PackageSpec(; path=base_path))
     Pkg.precompile()
 
-    using GQML
+    using QGML
     using CairoMakie: save
 end
 

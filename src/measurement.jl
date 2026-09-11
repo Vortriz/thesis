@@ -3,7 +3,7 @@ abstract type AbstractMeasurement end
 
 struct Normal <: AbstractMeasurement end
 
-function GQML.measure(
+function QGML.measure(
     ::Normal;
     n_data::Int64,
     n_ancilla::Int64,
@@ -30,7 +30,7 @@ end
 
 struct Alternate <: AbstractMeasurement end
 
-function GQML.measure(
+function QGML.measure(
     ::Alternate;
     n_data::Int64,
     n_ancilla::Int64,

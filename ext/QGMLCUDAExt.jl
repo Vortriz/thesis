@@ -1,17 +1,17 @@
-module GQMLCUDAExt
+module QGMLCUDAExt
 
 using CUDA
 using Yao: BatchedArrayReg, normalize!, cpu
 using LinearAlgebra: mul!
 using CairoMakie: GridPosition
-using GQML: GQML, Register, AbstractDist, BatchState
+using QGML: QGML, Register, AbstractDist, BatchState
 
 CUDA.allowscalar(false)
 
 Base.convert(::Type{Register}, x::CuMatrix{ComplexF64}) = x |> BatchedArrayReg |> normalize!
 CUDA.cu(dist::D) where {D <: AbstractDist} = dist.register |> CUDA.cu |> typeof(dist)
 
-function GQML.optimal_transport_plan(
+function QGML.optimal_transport_plan(
     C::CuMatrix{Float64};
     β::Float64=0.05,
     max_iter::Int=500,

@@ -23,7 +23,7 @@ end
 # ╔═╡ e362cf46-77d8-429e-9369-d58630c3eb32
 begin
     using CUDA
-    @revise using GQML
+    @revise using QGML
     import Dates
     import Optimisers
     import Logging
@@ -96,14 +96,14 @@ begin
             min_level=Logging.Info,
         )
         @info "Saving at $save_path"
-        GQML.log_hyperparams(tbl, ansatz, config, initial_params)
-        GQML.log_optim(tbl, optimizer)
+        QGML.log_hyperparams(tbl, ansatz, config, initial_params)
+        QGML.log_optim(tbl, optimizer)
     end
 end
 
 # ╔═╡ 2df9ad2c-2b71-4f18-a6c9-764638df4307
 if ansatz.n_data == 1
-    plots["target_bloch"] = GQML.plot_bloch(;
+    plots["target_bloch"] = QGML.plot_bloch(;
         traj=config.trajectory |> reverse |> ArbitraryTrajectory,
         title="Diffusion Trajectory",
         ref_dist=initial_dist,
@@ -113,7 +113,7 @@ end
 
 # ╔═╡ 54eba34c-2f07-49ea-af4f-bd8c64cd4994
 if typeof(config.trajectory) == Diffusion
-    plots["diffusion_trajectory"] = GQML.plot(
+    plots["diffusion_trajectory"] = QGML.plot(
         typeof(target_dist);
         traj=config.trajectory |> reverse |> ArbitraryTrajectory,
         title="Diffusion trajectory",
@@ -144,11 +144,11 @@ plots["loss_history_fig"] = plot_loss_history(
 
 # ╔═╡ d95bf7db-e4d9-4964-9019-69ac019dd7fb
 if TB_LOGGING == true
-    GQML.save(
+    QGML.save(
         save_path,
         ansatz, config, params,
     )
-    GQML.save(
+    QGML.save(
         save_path,
         plots,
     )
